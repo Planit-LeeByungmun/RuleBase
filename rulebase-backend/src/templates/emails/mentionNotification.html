@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head><meta charset="UTF-8"><title>질의 멘션 알림</title></head>
+<body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;">
+  <div style="background: #7c3aed; color: white; padding: 20px; border-radius: 8px 8px 0 0;">
+    <h1 style="margin: 0; font-size: 24px;">RuleBase</h1>
+  </div>
+  <div style="background: white; border: 1px solid #e5e7eb; border-top: none; padding: 30px; border-radius: 0 0 8px 8px;">
+    <h2>질의에서 멘션되었습니다</h2>
+    <p>안녕하세요, <strong>{{mentionedUserName}}</strong>님!</p>
+    <p><strong>{{questionerName}}</strong>님이 '<strong>{{fileName}}</strong>' 파일의 질의에서 회원님을 멘션했습니다.</p>
+    <div style="background: #f9fafb; border-left: 4px solid #7c3aed; padding: 15px; margin: 20px 0; border-radius: 0 4px 4px 0;">
+      <p style="margin: 0; white-space: pre-wrap;">{{questionBody}}</p>
+    </div>
+    <div style="text-align: center; margin: 30px 0;">
+      <a href="{{fileUrl}}" style="background: #7c3aed; color: white; padding: 12px 30px; border-radius: 6px; text-decoration: none; font-weight: bold;">질의 보기</a>
+    </div>
+  </div>
+</body>
+</html>

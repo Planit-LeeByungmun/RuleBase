@@ -1,0 +1,16 @@
+export const env = {
+  NODE_ENV: process.env.NODE_ENV || 'development',
+  PORT: parseInt(process.env.PORT || '4000', 10),
+  DATABASE_URL: process.env.DATABASE_URL || '',
+  JWT_SECRET: process.env.JWT_SECRET || 'secret',
+  JWT_EXPIRES_IN: process.env.JWT_EXPIRES_IN || '24h',
+  SMTP_HOST: process.env.SMTP_HOST || '',
+  SMTP_PORT: parseInt(process.env.SMTP_PORT || '587', 10),
+  SMTP_SECURE: process.env.SMTP_SECURE === 'true',
+  SMTP_USER: process.env.SMTP_USER || '',
+  SMTP_PASS: process.env.SMTP_PASS || '',
+  FROM_EMAIL: process.env.FROM_EMAIL || '',
+  ADMIN_EMAIL: process.env.ADMIN_EMAIL || '',
+  FRONTEND_URL: process.env.FRONTEND_URL || 'http://localhost:3000',
+  UPLOAD_MAX_SIZE_MB: parseInt(process.env.UPLOAD_MAX_SIZE_MB || '50', 10),
+};

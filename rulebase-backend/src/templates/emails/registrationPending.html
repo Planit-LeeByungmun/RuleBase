@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head><meta charset="UTF-8"><title>회원가입 승인 요청</title></head>
+<body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;">
+  <div style="background: #2563eb; color: white; padding: 20px; border-radius: 8px 8px 0 0;">
+    <h1 style="margin: 0; font-size: 24px;">RuleBase</h1>
+    <p style="margin: 5px 0 0 0; opacity: 0.9;">회사 규정 관리 시스템</p>
+  </div>
+  <div style="background: white; border: 1px solid #e5e7eb; border-top: none; padding: 30px; border-radius: 0 0 8px 8px;">
+    <h2 style="color: #1f2937;">새로운 회원가입 승인 요청</h2>
+    <p>새로운 사용자가 회원가입을 신청했습니다. 승인 또는 반려해 주세요.</p>
+    <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+      <tr><td style="padding: 8px; border: 1px solid #e5e7eb; background: #f9fafb; font-weight: bold; width: 30%;">이름</td><td style="padding: 8px; border: 1px solid #e5e7eb;">{{displayName}}</td></tr>
+      <tr><td style="padding: 8px; border: 1px solid #e5e7eb; background: #f9fafb; font-weight: bold;">사용자명</td><td style="padding: 8px; border: 1px solid #e5e7eb;">{{username}}</td></tr>
+      <tr><td style="padding: 8px; border: 1px solid #e5e7eb; background: #f9fafb; font-weight: bold;">이메일</td><td style="padding: 8px; border: 1px solid #e5e7eb;">{{email}}</td></tr>
+    </table>
+    <div style="text-align: center; margin: 30px 0;">
+      <a href="{{adminUrl}}" style="background: #2563eb; color: white; padding: 12px 30px; border-radius: 6px; text-decoration: none; font-weight: bold;">관리자 페이지에서 승인/반려</a>
+    </div>
+  </div>
+</body>
+</html>

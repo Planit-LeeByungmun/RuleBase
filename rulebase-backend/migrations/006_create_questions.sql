@@ -1,0 +1,8 @@
+CREATE TABLE IF NOT EXISTS questions (
+  id          SERIAL PRIMARY KEY,
+  file_id     INTEGER NOT NULL REFERENCES files(id) ON DELETE CASCADE,
+  asked_by    INTEGER NOT NULL REFERENCES users(id),
+  body        TEXT NOT NULL,
+  is_resolved BOOLEAN NOT NULL DEFAULT FALSE,
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
