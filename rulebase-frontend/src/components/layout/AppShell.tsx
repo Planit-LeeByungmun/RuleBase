@@ -8,6 +8,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
 
   const navLinks = [
+    { to: '/dashboard', label: '대시보드' },
     { to: '/documents', label: '문서' },
     { to: '/summary', label: '요약' },
     { to: '/faq', label: 'FAQ' },
@@ -24,7 +25,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <nav className="bg-blue-700 text-white shadow">
         <div className="max-w-screen-xl mx-auto px-4 flex items-center justify-between h-14">
           <div className="flex items-center gap-6">
-            <Link to="/documents" className="font-bold text-lg">RuleBase</Link>
+            <Link to="/dashboard" className="font-bold text-lg">RuleBase</Link>
             {navLinks.map(l => (
               <Link
                 key={l.to}

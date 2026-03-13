@@ -7,6 +7,7 @@ import { DocumentsPage } from './pages/DocumentsPage';
 import { SummaryPage } from './pages/SummaryPage';
 import { FAQPage } from './pages/FAQPage';
 import { AdminPage } from './pages/AdminPage';
+import { DashboardPage } from './pages/DashboardPage';
 import { ResetPassword } from './pages/AuthPage/PasswordReset/ResetPassword';
 import { ToastContainer } from './components/ui/Toast';
 
@@ -27,6 +28,7 @@ function App() {
           <Route path="/auth" element={<AuthPage />} />
           <Route path="/reset-password/:token" element={<ResetPassword />} />
           <Route element={<ProtectedRoute />}>
+            <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/documents" element={<DocumentsPage />} />
             <Route path="/summary" element={<SummaryPage />} />
             <Route path="/faq" element={<FAQPage />} />
@@ -34,7 +36,7 @@ function App() {
           <Route element={<ProtectedRoute requireAdmin />}>
             <Route path="/admin" element={<AdminPage />} />
           </Route>
-          <Route path="*" element={<Navigate to="/documents" replace />} />
+          <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>
         <ToastContainer />
       </BrowserRouter>

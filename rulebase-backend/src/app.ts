@@ -12,6 +12,7 @@ import foldersRouter from './modules/folders/folders.router';
 import filesRouter from './modules/files/files.router';
 import questionsRouter from './modules/questions/questions.router';
 import faqRouter from './modules/faq/faq.router';
+import dashboardRouter from './modules/dashboard/dashboard.router';
 import { errorHandler } from './middleware/errorHandler';
 
 const app = express();
@@ -53,6 +54,7 @@ app.use('/api/v1/folders', foldersRouter);
 app.use('/api/v1/files', filesRouter);
 app.use('/api/v1/questions', questionsRouter);
 app.use('/api/v1/faq', faqRouter);
+app.use('/api/v1/dashboard', dashboardRouter);
 
 // 404
 app.use((_req, res) => {

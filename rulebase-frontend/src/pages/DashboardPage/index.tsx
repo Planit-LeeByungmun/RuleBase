@@ -1,0 +1,167 @@
+import React from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { AppShell } from '../../components/layout/AppShell';
+import { dashboardApi } from '../../api/dashboard';
+
+interface DashboardStats {
+  total_files: number;
+  total_folders: number;
+  unresolved_questions: number;
+  total_faq_items: number;
+}
+
+interface RecentFile {
+  id: number;
+  original_name: string;
+  folder_name: string;
+  uploader_name: string;
+  created_at: string;
+}
+
+interface RecentQuestion {
+  id: number;
+  body: string;
+  file_name: string;
+  author_name: string;
+  is_resolved: boolean;
+  created_at: string;
+}
+
+interface DashboardData {
+  stats: DashboardStats;
+  recentFiles: RecentFile[];
+  recentQuestions: RecentQuestion[];
+}
+
+const statCards = [
+  { key: 'total_files' as const, label: '총 문서 수', color: 'bg-blue-500' },
+  { key: 'total_folders' as const, label: '총 폴더 수', color: 'bg-green-500' },
+  { key: 'unresolved_questions' as const, label: '미해결 질문 수', color: 'bg-yellow-500' },
+  { key: 'total_faq_items' as const, label: 'FAQ 항목 수', color: 'bg-purple-500' },
+];
+
+function formatDate(dateStr: string) {
+  return new Date(dateStr).toLocaleDateString('ko-KR', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  });
+}
+
+export function DashboardPage() {
+  const { data, isLoading } = useQuery({
+    queryKey: ['dashboard'],
+    queryFn: async () => {
+      const res = await dashboardApi.getAll();
+      return res.data.data as DashboardData;
+    },
+  });
+
+  return (
+    <AppShell>
+      <div className="max-w-screen-xl mx-auto w-full px-4 py-6 space-y-6">
+        <h1 className="text-2xl font-bold text-gray-900">대시보드</h1>
+
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {statCards.map(card => (
+            <div key={card.key} className="bg-white rounded-lg shadow p-5 flex items-center gap-4">
+              <div className={`${card.color} w-12 h-12 rounded-lg flex items-center justify-center`}>
+                <span className="text-white text-xl font-bold">
+                  {isLoading ? '-' : (data?.stats[card.key] ?? 0)}
+                </span>
+              </div>
+              <div>
+                <p className="text-sm text-gray-500">{card.label}</p>
+                <p className="text-2xl font-semibold text-gray-900">
+                  {isLoading ? '...' : (data?.stats[card.key] ?? 0)}
+                </p>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Recent Activity */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Recent Files */}
+          <div className="bg-white rounded-lg shadow">
+            <div className="px-5 py-4 border-b border-gray-200">
+              <h2 className="text-lg font-semibold text-gray-900">최근 업로드된 파일</h2>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="bg-gray-50 text-gray-500 text-left">
+                  <tr>
+                    <th className="px-5 py-3 font-medium">파일명</th>
+                    <th className="px-5 py-3 font-medium">폴더</th>
+                    <th className="px-5 py-3 font-medium">업로더</th>
+                    <th className="px-5 py-3 font-medium">날짜</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {isLoading ? (
+                    <tr><td colSpan={4} className="px-5 py-8 text-center text-gray-400">로딩 중...</td></tr>
+                  ) : !data?.recentFiles.length ? (
+                    <tr><td colSpan={4} className="px-5 py-8 text-center text-gray-400">파일이 없습니다</td></tr>
+                  ) : (
+                    data.recentFiles.map(file => (
+                      <tr key={file.id} className="hover:bg-gray-50">
+                        <td className="px-5 py-3 font-medium text-gray-900 truncate max-w-[200px]">{file.original_name}</td>
+                        <td className="px-5 py-3 text-gray-600">{file.folder_name}</td>
+                        <td className="px-5 py-3 text-gray-600">{file.uploader_name}</td>
+                        <td className="px-5 py-3 text-gray-500">{formatDate(file.created_at)}</td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Recent Questions */}
+          <div className="bg-white rounded-lg shadow">
+            <div className="px-5 py-4 border-b border-gray-200">
+              <h2 className="text-lg font-semibold text-gray-900">최근 질문</h2>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="bg-gray-50 text-gray-500 text-left">
+                  <tr>
+                    <th className="px-5 py-3 font-medium">질문</th>
+                    <th className="px-5 py-3 font-medium">파일</th>
+                    <th className="px-5 py-3 font-medium">작성자</th>
+                    <th className="px-5 py-3 font-medium">상태</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {isLoading ? (
+                    <tr><td colSpan={4} className="px-5 py-8 text-center text-gray-400">로딩 중...</td></tr>
+                  ) : !data?.recentQuestions.length ? (
+                    <tr><td colSpan={4} className="px-5 py-8 text-center text-gray-400">질문이 없습니다</td></tr>
+                  ) : (
+                    data.recentQuestions.map(q => (
+                      <tr key={q.id} className="hover:bg-gray-50">
+                        <td className="px-5 py-3 text-gray-900 truncate max-w-[200px]">{q.body}</td>
+                        <td className="px-5 py-3 text-gray-600 truncate max-w-[120px]">{q.file_name}</td>
+                        <td className="px-5 py-3 text-gray-600">{q.author_name}</td>
+                        <td className="px-5 py-3">
+                          <span className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${
+                            q.is_resolved
+                              ? 'bg-green-100 text-green-700'
+                              : 'bg-red-100 text-red-700'
+                          }`}>
+                            {q.is_resolved ? '해결' : '미해결'}
+                          </span>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </AppShell>
+  );
+}
