@@ -14,36 +14,55 @@ export function AuthPage() {
   if (isAuthenticated) return <Navigate to="/documents" replace />;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md">
-        <div className="p-6 border-b">
-          <h1 className="text-2xl font-bold text-blue-700 text-center">RuleBase</h1>
-          <p className="text-center text-gray-500 text-sm mt-1">회사 규정 관리 시스템</p>
-        </div>
+    <div className="min-h-screen bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 flex items-center justify-center p-4 relative overflow-hidden">
+      {/* Background decoration */}
+      <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-white/5 rounded-full" />
+        <div className="absolute -bottom-32 -left-32 w-96 h-96 bg-white/5 rounded-full" />
+        <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-white/5 rounded-full" />
+      </div>
 
-        {tab !== 'reset' && (
-          <div className="flex border-b">
-            {(['login', 'register'] as const).map(t => (
-              <button
-                key={t}
-                onClick={() => setTab(t)}
-                className={`flex-1 py-3 text-sm font-medium transition-colors ${
-                  tab === t
-                    ? 'border-b-2 border-blue-600 text-blue-600'
-                    : 'text-gray-500 hover:text-gray-700'
-                }`}
-              >
-                {t === 'login' ? '로그인' : '회원가입'}
-              </button>
-            ))}
+      <div className="relative w-full max-w-md">
+        {/* Logo area */}
+        <div className="text-center mb-8">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-white/10 backdrop-blur-sm rounded-2xl mb-4">
+            <span className="text-3xl">📋</span>
           </div>
-        )}
-
-        <div className="p-6">
-          {tab === 'login' && <LoginForm onForgotPassword={() => setTab('reset')} />}
-          {tab === 'register' && <RegisterForm onSuccess={() => setTab('login')} />}
-          {tab === 'reset' && <RequestReset onBack={() => setTab('login')} />}
+          <h1 className="text-3xl font-bold text-white">RuleBase</h1>
+          <p className="text-blue-200 text-sm mt-1">회사 규정 관리 시스템</p>
         </div>
+
+        {/* Card */}
+        <div className="bg-white rounded-2xl shadow-2xl overflow-hidden">
+          {tab !== 'reset' && (
+            <div className="flex p-1.5 mx-6 mt-6 bg-gray-100 rounded-xl">
+              {(['login', 'register'] as const).map(t => (
+                <button
+                  key={t}
+                  onClick={() => setTab(t)}
+                  className={`flex-1 py-2.5 text-sm font-medium rounded-lg transition-all ${
+                    tab === t
+                      ? 'bg-white text-gray-900 shadow-sm'
+                      : 'text-gray-500 hover:text-gray-700'
+                  }`}
+                >
+                  {t === 'login' ? '로그인' : '회원가입'}
+                </button>
+              ))}
+            </div>
+          )}
+
+          <div className="p-6">
+            {tab === 'login' && <LoginForm onForgotPassword={() => setTab('reset')} />}
+            {tab === 'register' && <RegisterForm onSuccess={() => setTab('login')} />}
+            {tab === 'reset' && <RequestReset onBack={() => setTab('login')} />}
+          </div>
+        </div>
+
+        {/* Footer */}
+        <p className="text-center text-blue-300 text-xs mt-6">
+          &copy; 2026 RuleBase. All rights reserved.
+        </p>
       </div>
     </div>
   );

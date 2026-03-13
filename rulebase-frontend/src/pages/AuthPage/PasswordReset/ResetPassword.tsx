@@ -39,15 +39,38 @@ export function ResetPassword() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
-        <h1 className="text-2xl font-bold text-blue-700 text-center mb-2">새 비밀번호 설정</h1>
-        <form onSubmit={handleSubmit} className="space-y-4 mt-4">
-          <Input label="새 비밀번호" type="password" value={form.newPassword} onChange={e => setForm(f => ({ ...f, newPassword: e.target.value }))} />
-          <Input label="비밀번호 확인" type="password" value={form.confirmPassword} onChange={e => setForm(f => ({ ...f, confirmPassword: e.target.value }))} />
-          {error && <p className="text-sm text-red-600 bg-red-50 p-2 rounded">{error}</p>}
-          <Button type="submit" loading={loading} className="w-full">비밀번호 변경</Button>
-        </form>
+    <div className="min-h-screen bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 flex items-center justify-center p-4 relative overflow-hidden">
+      <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-white/5 rounded-full" />
+        <div className="absolute -bottom-32 -left-32 w-96 h-96 bg-white/5 rounded-full" />
+      </div>
+
+      <div className="relative w-full max-w-md">
+        <div className="text-center mb-8">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-white/10 backdrop-blur-sm rounded-2xl mb-4">
+            <span className="text-3xl">🔐</span>
+          </div>
+          <h1 className="text-2xl font-bold text-white">새 비밀번호 설정</h1>
+          <p className="text-blue-200 text-sm mt-1">안전한 비밀번호를 입력하세요</p>
+        </div>
+
+        <div className="bg-white rounded-2xl shadow-2xl p-6">
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <Input label="새 비밀번호" type="password" value={form.newPassword} onChange={e => setForm(f => ({ ...f, newPassword: e.target.value }))} />
+            <Input label="비밀번호 확인" type="password" value={form.confirmPassword} onChange={e => setForm(f => ({ ...f, confirmPassword: e.target.value }))} />
+            {error && (
+              <div className="flex items-center gap-2 text-sm text-red-600 bg-red-50 p-3 rounded-lg">
+                <span>⚠️</span>
+                <span>{error}</span>
+              </div>
+            )}
+            <Button type="submit" loading={loading} className="w-full">비밀번호 변경</Button>
+          </form>
+        </div>
+
+        <p className="text-center text-blue-300 text-xs mt-6">
+          &copy; 2026 RuleBase. All rights reserved.
+        </p>
       </div>
     </div>
   );

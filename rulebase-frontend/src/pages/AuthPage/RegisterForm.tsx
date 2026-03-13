@@ -67,20 +67,32 @@ export function RegisterForm({ onSuccess }: Props) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-3">
+      <div className="space-y-1 mb-1">
+        <p className="text-lg font-semibold text-gray-900">회원가입</p>
+        <p className="text-sm text-gray-500">계정을 생성하세요</p>
+      </div>
       <Input label="이메일 *" type="email" value={form.email} onChange={e => update('email', e.target.value)} error={errors.email} />
-      <Input label="사용자명 *" value={form.username} onChange={e => update('username', e.target.value)} error={errors.username} placeholder="영문, 숫자, _ 조합" />
-      <Input label="이름 *" value={form.displayName} onChange={e => update('displayName', e.target.value)} error={errors.displayName} />
-      <Input label="부서" value={form.department} onChange={e => update('department', e.target.value)} />
+      <div className="grid grid-cols-2 gap-3">
+        <Input label="사용자명 *" value={form.username} onChange={e => update('username', e.target.value)} error={errors.username} placeholder="영문, 숫자, _" />
+        <Input label="이름 *" value={form.displayName} onChange={e => update('displayName', e.target.value)} error={errors.displayName} />
+      </div>
+      <Input label="부서" value={form.department} onChange={e => update('department', e.target.value)} placeholder="선택사항" />
       <div>
         <Input label="비밀번호 *" type="password" value={form.password} onChange={e => update('password', e.target.value)} error={errors.password} />
         {form.password && (
-          <p className={`text-xs mt-1 ${passwordValid ? 'text-green-600' : 'text-red-500'}`}>
-            {passwordValid ? '✓ 안전한 비밀번호' : '8~10자리, 영문+숫자+특수문자(@$!%*#?&) 포함'}
-          </p>
+          <div className={`flex items-center gap-1.5 text-xs mt-1.5 ${passwordValid ? 'text-green-600' : 'text-amber-500'}`}>
+            <span>{passwordValid ? '✅' : '⚠️'}</span>
+            <span>{passwordValid ? '안전한 비밀번호입니다' : '8~10자리, 영문+숫자+특수문자(@$!%*#?&) 포함'}</span>
+          </div>
         )}
       </div>
       <Input label="비밀번호 확인 *" type="password" value={form.confirmPassword} onChange={e => update('confirmPassword', e.target.value)} error={errors.confirmPassword} />
-      {errors.general && <p className="text-sm text-red-600 bg-red-50 p-2 rounded">{errors.general}</p>}
+      {errors.general && (
+        <div className="flex items-center gap-2 text-sm text-red-600 bg-red-50 p-3 rounded-lg">
+          <span>⚠️</span>
+          <span>{errors.general}</span>
+        </div>
+      )}
       <Button type="submit" loading={loading} className="w-full mt-2">회원가입 신청</Button>
     </form>
   );

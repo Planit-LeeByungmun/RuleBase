@@ -39,6 +39,10 @@ export function LoginForm({ onForgotPassword }: Props) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="space-y-1">
+        <p className="text-lg font-semibold text-gray-900">환영합니다</p>
+        <p className="text-sm text-gray-500">계정에 로그인하세요</p>
+      </div>
       <Input
         label="이메일"
         type="email"
@@ -55,12 +59,17 @@ export function LoginForm({ onForgotPassword }: Props) {
         placeholder="••••••••"
         required
       />
-      {error && <p className="text-sm text-red-600 bg-red-50 p-2 rounded">{error}</p>}
+      {error && (
+        <div className="flex items-center gap-2 text-sm text-red-600 bg-red-50 p-3 rounded-lg">
+          <span>⚠️</span>
+          <span>{error}</span>
+        </div>
+      )}
       <Button type="submit" loading={loading} className="w-full">로그인</Button>
       <button
         type="button"
         onClick={onForgotPassword}
-        className="w-full text-sm text-blue-600 hover:underline"
+        className="w-full text-sm text-gray-400 hover:text-blue-600 transition-colors"
       >
         비밀번호를 잊으셨나요?
       </button>
