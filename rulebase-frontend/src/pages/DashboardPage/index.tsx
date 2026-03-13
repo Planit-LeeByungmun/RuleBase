@@ -33,10 +33,10 @@ interface DashboardData {
 }
 
 const statCards = [
-  { key: 'total_files' as const, label: '총 문서 수', color: 'bg-blue-500' },
-  { key: 'total_folders' as const, label: '총 폴더 수', color: 'bg-green-500' },
-  { key: 'unresolved_questions' as const, label: '미해결 질문 수', color: 'bg-yellow-500' },
-  { key: 'total_faq_items' as const, label: 'FAQ 항목 수', color: 'bg-purple-500' },
+  { key: 'total_files' as const, label: '총 문서 수', icon: '📄', gradient: 'from-blue-500 to-blue-600', light: 'bg-blue-50 text-blue-600' },
+  { key: 'total_folders' as const, label: '총 폴더 수', icon: '📁', gradient: 'from-emerald-500 to-emerald-600', light: 'bg-emerald-50 text-emerald-600' },
+  { key: 'unresolved_questions' as const, label: '미해결 질문', icon: '❓', gradient: 'from-amber-500 to-orange-500', light: 'bg-amber-50 text-amber-600' },
+  { key: 'total_faq_items' as const, label: 'FAQ 항목', icon: '💡', gradient: 'from-violet-500 to-purple-600', light: 'bg-violet-50 text-violet-600' },
 ];
 
 function formatDate(dateStr: string) {
@@ -63,18 +63,19 @@ export function DashboardPanel() {
       {/* Stats Cards */}
       <div className="grid grid-cols-2 gap-3">
         {statCards.map(card => (
-          <div key={card.key} className="bg-white rounded-lg shadow p-4 flex items-center gap-3">
-            <div className={`${card.color} w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0`}>
-              <span className="text-white text-sm font-bold">
-                {isLoading ? '-' : (data?.stats[card.key] ?? 0)}
-              </span>
+          <div key={card.key} className="relative overflow-hidden bg-white rounded-xl shadow-sm border border-gray-100 p-4 hover:shadow-md transition-shadow">
+            <div className={`absolute top-0 right-0 w-20 h-20 bg-gradient-to-br ${card.gradient} opacity-5 rounded-bl-full`} />
+            <div className="flex items-center justify-between mb-3">
+              <span className={`text-xs font-medium px-2 py-1 rounded-full ${card.light}`}>{card.label}</span>
+              <span className="text-xl">{card.icon}</span>
             </div>
-            <div className="min-w-0">
-              <p className="text-xs text-gray-500">{card.label}</p>
-              <p className="text-lg font-semibold text-gray-900">
-                {isLoading ? '...' : (data?.stats[card.key] ?? 0)}
-              </p>
-            </div>
+            <p className="text-2xl font-bold text-gray-900">
+              {isLoading ? (
+                <span className="inline-block w-10 h-7 bg-gray-200 rounded animate-pulse" />
+              ) : (
+                (data?.stats[card.key] ?? 0).toLocaleString()
+              )}
+            </p>
           </div>
         ))}
       </div>
