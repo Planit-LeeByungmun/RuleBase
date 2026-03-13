@@ -81,80 +81,70 @@ export function DashboardPanel() {
       </div>
 
       {/* Recent Files */}
-      <div className="bg-white rounded-lg shadow">
-        <div className="px-4 py-3 border-b border-gray-200">
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100">
+        <div className="px-5 py-4 flex items-center gap-2">
+          <span className="text-base">📄</span>
           <h3 className="text-sm font-semibold text-gray-900">최근 업로드된 파일</h3>
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-xs">
-            <thead className="bg-gray-50 text-gray-500 text-left">
-              <tr>
-                <th className="px-4 py-2 font-medium">파일명</th>
-                <th className="px-4 py-2 font-medium">폴더</th>
-                <th className="px-4 py-2 font-medium">업로더</th>
-                <th className="px-4 py-2 font-medium">날짜</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {isLoading ? (
-                <tr><td colSpan={4} className="px-4 py-6 text-center text-gray-400">로딩 중...</td></tr>
-              ) : !data?.recentFiles.length ? (
-                <tr><td colSpan={4} className="px-4 py-6 text-center text-gray-400">파일이 없습니다</td></tr>
-              ) : (
-                data.recentFiles.map(file => (
-                  <tr key={file.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-2 font-medium text-gray-900 truncate max-w-[150px]">{file.original_name}</td>
-                    <td className="px-4 py-2 text-gray-600 truncate max-w-[100px]">{file.folder_name}</td>
-                    <td className="px-4 py-2 text-gray-600">{file.uploader_name}</td>
-                    <td className="px-4 py-2 text-gray-500">{formatDate(file.created_at)}</td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+        <div className="px-5 pb-4 space-y-2">
+          {isLoading ? (
+            Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="h-14 bg-gray-100 rounded-lg animate-pulse" />
+            ))
+          ) : !data?.recentFiles.length ? (
+            <div className="py-8 text-center text-gray-400 text-sm">파일이 없습니다</div>
+          ) : (
+            data.recentFiles.map(file => (
+              <div key={file.id} className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
+                <div className="w-9 h-9 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
+                  <span className="text-blue-500 text-sm">📋</span>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-gray-900 truncate">{file.original_name}</p>
+                  <p className="text-xs text-gray-400">{file.folder_name} · {file.uploader_name}</p>
+                </div>
+                <span className="text-xs text-gray-400 flex-shrink-0">{formatDate(file.created_at)}</span>
+              </div>
+            ))
+          )}
         </div>
       </div>
 
       {/* Recent Questions */}
-      <div className="bg-white rounded-lg shadow">
-        <div className="px-4 py-3 border-b border-gray-200">
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100">
+        <div className="px-5 py-4 flex items-center gap-2">
+          <span className="text-base">💬</span>
           <h3 className="text-sm font-semibold text-gray-900">최근 질문</h3>
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-xs">
-            <thead className="bg-gray-50 text-gray-500 text-left">
-              <tr>
-                <th className="px-4 py-2 font-medium">질문</th>
-                <th className="px-4 py-2 font-medium">파일</th>
-                <th className="px-4 py-2 font-medium">작성자</th>
-                <th className="px-4 py-2 font-medium">상태</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {isLoading ? (
-                <tr><td colSpan={4} className="px-4 py-6 text-center text-gray-400">로딩 중...</td></tr>
-              ) : !data?.recentQuestions.length ? (
-                <tr><td colSpan={4} className="px-4 py-6 text-center text-gray-400">질문이 없습니다</td></tr>
-              ) : (
-                data.recentQuestions.map(q => (
-                  <tr key={q.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-2 text-gray-900 truncate max-w-[150px]">{q.body}</td>
-                    <td className="px-4 py-2 text-gray-600 truncate max-w-[100px]">{q.file_name}</td>
-                    <td className="px-4 py-2 text-gray-600">{q.author_name}</td>
-                    <td className="px-4 py-2">
-                      <span className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${
-                        q.is_resolved
-                          ? 'bg-green-100 text-green-700'
-                          : 'bg-red-100 text-red-700'
-                      }`}>
-                        {q.is_resolved ? '해결' : '미해결'}
-                      </span>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+        <div className="px-5 pb-4 space-y-2">
+          {isLoading ? (
+            Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="h-14 bg-gray-100 rounded-lg animate-pulse" />
+            ))
+          ) : !data?.recentQuestions.length ? (
+            <div className="py-8 text-center text-gray-400 text-sm">질문이 없습니다</div>
+          ) : (
+            data.recentQuestions.map(q => (
+              <div key={q.id} className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
+                <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 ${
+                  q.is_resolved ? 'bg-green-50' : 'bg-amber-50'
+                }`}>
+                  <span className="text-sm">{q.is_resolved ? '✅' : '❓'}</span>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-gray-900 truncate">{q.body}</p>
+                  <p className="text-xs text-gray-400">{q.file_name} · {q.author_name}</p>
+                </div>
+                <span className={`text-xs font-medium px-2 py-0.5 rounded-full flex-shrink-0 ${
+                  q.is_resolved
+                    ? 'bg-green-50 text-green-600'
+                    : 'bg-amber-50 text-amber-600'
+                }`}>
+                  {q.is_resolved ? '해결' : '미해결'}
+                </span>
+              </div>
+            ))
+          )}
         </div>
       </div>
     </div>
