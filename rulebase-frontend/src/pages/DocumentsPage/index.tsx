@@ -15,11 +15,13 @@ export function DocumentsPage() {
         <FolderSidebar />
         {selectedFileId ? (
           <FileViewer />
-        ) : (
+        ) : selectedFolderId ? (
           <>
             <FileList />
             <DashboardPanel />
           </>
+        ) : (
+          <DashboardPanel />
         )}
       </div>
     </AppShell>
