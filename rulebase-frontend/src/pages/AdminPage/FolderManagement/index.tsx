@@ -23,7 +23,7 @@ export function FolderManagement() {
   const [editingFolder, setEditingFolder] = useState<Folder | null>(null);
   const [editName, setEditName] = useState('');
 
-  const { data: folders } = useQuery({
+  const { data: folders, isLoading } = useQuery({
     queryKey: ['folders', 'tree'],
     queryFn: async () => {
       const res = await foldersApi.getTree();
@@ -65,43 +65,70 @@ export function FolderManagement() {
   const flatFolders = folders ? flattenFolders(folders) : [];
 
   return (
-    <div>
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-semibold text-gray-800">폴더 관리</h2>
+    <div className="bg-white rounded-xl shadow-sm border border-gray-100">
+      <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <span className="text-base">📁</span>
+          <h2 className="text-sm font-semibold text-gray-900">폴더 관리</h2>
+          {!isLoading && (
+            <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">
+              {flatFolders.length}개
+            </span>
+          )}
+        </div>
         <Button size="sm" onClick={() => setShowCreate(true)}>새 폴더</Button>
       </div>
 
-      <div className="bg-white border border-gray-200 rounded-lg divide-y">
-        {flatFolders.length === 0 && (
-          <p className="text-gray-400 text-sm p-4">폴더가 없습니다</p>
-        )}
-        {flatFolders.map(({ folder, depth }) => (
-          <div key={folder.id} className="flex items-center gap-3 p-3">
-            <div style={{ marginLeft: `${depth * 20}px` }} className="flex items-center gap-2 flex-1">
-              <span className="text-yellow-500">📁</span>
-              <span className="text-sm text-gray-700">{folder.name}</span>
-            </div>
-            <div className="flex gap-3">
-              <button
-                onClick={() => { setEditingFolder(folder); setEditName(folder.name); }}
-                className="text-xs text-blue-600 hover:underline"
-              >편집</button>
-              <button
-                onClick={() => {
-                  if (window.confirm(`"${folder.name}" 폴더를 삭제하시겠습니까?`))
-                    deleteMutation.mutate(folder.id);
-                }}
-                className="text-xs text-red-500 hover:underline"
-              >삭제</button>
-            </div>
+      <div className="p-4">
+        {isLoading ? (
+          <div className="space-y-2">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="h-12 bg-gray-100 rounded-lg animate-pulse" />
+            ))}
           </div>
-        ))}
+        ) : flatFolders.length === 0 ? (
+          <div className="text-center py-12">
+            <span className="text-4xl block mb-3">📭</span>
+            <p className="text-gray-400 text-sm">폴더가 없습니다</p>
+          </div>
+        ) : (
+          <div className="space-y-1">
+            {flatFolders.map(({ folder, depth }) => (
+              <div
+                key={folder.id}
+                className="group flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors"
+                style={{ paddingLeft: `${12 + depth * 24}px` }}
+              >
+                <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
+                  depth === 0 ? 'bg-amber-50' : 'bg-gray-50'
+                }`}>
+                  <span className="text-sm">{depth === 0 ? '📂' : '📁'}</span>
+                </div>
+                <span className="flex-1 text-sm font-medium text-gray-800">{folder.name}</span>
+                <div className="flex gap-1">
+                  <button
+                    onClick={() => { setEditingFolder(folder); setEditName(folder.name); }}
+                    className="text-xs text-blue-600 hover:text-blue-700 px-2 py-1 rounded-md hover:bg-blue-50 transition-colors"
+                  >
+                    편집
+                  </button>
+                  <button
+                    onClick={() => {
+                      if (window.confirm(`"${folder.name}" 폴더를 삭제하시겠습니까?`))
+                        deleteMutation.mutate(folder.id);
+                    }}
+                    className="text-xs text-red-500 hover:text-red-600 px-2 py-1 rounded-md hover:bg-red-50 transition-colors"
+                  >
+                    삭제
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
-      <Modal
-        isOpen={showCreate}
-        onClose={() => setShowCreate(false)}
-        title="새 폴더 만들기"
+      <Modal isOpen={showCreate} onClose={() => setShowCreate(false)} title="새 폴더 만들기"
         footer={
           <>
             <Button variant="secondary" onClick={() => setShowCreate(false)}>취소</Button>
@@ -120,19 +147,14 @@ export function FolderManagement() {
             >
               <option value="">최상위 폴더</option>
               {flatFolders.map(({ folder, depth }) => (
-                <option key={folder.id} value={folder.id}>
-                  {'　'.repeat(depth)}{folder.name}
-                </option>
+                <option key={folder.id} value={folder.id}>{'　'.repeat(depth)}{folder.name}</option>
               ))}
             </select>
           </div>
         </div>
       </Modal>
 
-      <Modal
-        isOpen={!!editingFolder}
-        onClose={() => setEditingFolder(null)}
-        title="폴더 이름 변경"
+      <Modal isOpen={!!editingFolder} onClose={() => setEditingFolder(null)} title="폴더 이름 변경"
         footer={
           <>
             <Button variant="secondary" onClick={() => setEditingFolder(null)}>취소</Button>

@@ -16,7 +16,7 @@ export function FAQManagement() {
   const [categoryName, setCategoryName] = useState('');
   const [itemForm, setItemForm] = useState({ question: '', answer: '' });
 
-  const { data: categories } = useQuery({
+  const { data: categories, isLoading } = useQuery({
     queryKey: ['faq', 'categories'],
     queryFn: async () => {
       const res = await faqApi.getCategories();
@@ -69,67 +69,99 @@ export function FAQManagement() {
   });
 
   return (
-    <div>
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-semibold text-gray-800">FAQ 관리</h2>
+    <div className="bg-white rounded-xl shadow-sm border border-gray-100">
+      <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <span className="text-base">💡</span>
+          <h2 className="text-sm font-semibold text-gray-900">FAQ 관리</h2>
+          {!isLoading && (
+            <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">
+              {categories?.length ?? 0}개 카테고리
+            </span>
+          )}
+        </div>
         <Button size="sm" onClick={() => setShowCategoryModal(true)}>카테고리 추가</Button>
       </div>
 
-      <div className="space-y-4">
-        {categories?.length === 0 && (
-          <p className="text-gray-400 text-sm text-center py-8">카테고리가 없습니다</p>
-        )}
-        {categories?.map(cat => (
-          <div key={cat.id} className="bg-white border border-gray-200 rounded-lg">
-            <div className="flex items-center justify-between p-4 border-b">
-              <h3 className="font-semibold text-gray-700">{cat.name}</h3>
-              <div className="flex gap-2">
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  onClick={() => { setSelectedCategoryId(cat.id); setShowItemModal(true); }}
-                >
-                  항목 추가
-                </Button>
-                <button
-                  onClick={() => {
-                    if (window.confirm(`"${cat.name}" 카테고리를 삭제하시겠습니까?`))
-                      deleteCategoryMutation.mutate(cat.id);
-                  }}
-                  className="text-sm text-red-500 hover:underline"
-                >
-                  삭제
-                </button>
-              </div>
-            </div>
-            {cat.items.length === 0 && <p className="text-sm text-gray-400 p-4">항목이 없습니다</p>}
-            {cat.items.map(item => (
-              <div key={item.id} className="p-4 border-b last:border-b-0">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-gray-800">Q: {item.question}</p>
-                    <p className="text-sm text-gray-600 mt-1 whitespace-pre-wrap">A: {item.answer}</p>
+      <div className="p-4">
+        {isLoading ? (
+          <div className="space-y-3">
+            {Array.from({ length: 2 }).map((_, i) => (
+              <div key={i} className="h-24 bg-gray-100 rounded-lg animate-pulse" />
+            ))}
+          </div>
+        ) : categories?.length === 0 ? (
+          <div className="text-center py-12">
+            <span className="text-4xl block mb-3">📭</span>
+            <p className="text-gray-400 text-sm">카테고리가 없습니다</p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {categories?.map(cat => (
+              <div key={cat.id} className="rounded-xl border border-gray-100 overflow-hidden">
+                <div className="flex items-center justify-between px-4 py-3 bg-gray-50">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm">📂</span>
+                    <h3 className="text-sm font-semibold text-gray-800">{cat.name}</h3>
+                    <span className="text-xs font-medium px-1.5 py-0.5 rounded-full bg-white text-gray-400 border border-gray-200">
+                      {cat.items.length}개
+                    </span>
                   </div>
-                  <button
-                    onClick={() => {
-                      if (window.confirm('이 항목을 삭제하시겠습니까?'))
-                        deleteItemMutation.mutate(item.id);
-                    }}
-                    className="text-xs text-red-500 hover:underline whitespace-nowrap"
-                  >
-                    삭제
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => { setSelectedCategoryId(cat.id); setShowItemModal(true); }}
+                      className="text-xs text-blue-600 hover:text-blue-700 px-2 py-1 rounded-md hover:bg-blue-50 transition-colors"
+                    >
+                      항목 추가
+                    </button>
+                    <button
+                      onClick={() => {
+                        if (window.confirm(`"${cat.name}" 카테고리를 삭제하시겠습니까?`))
+                          deleteCategoryMutation.mutate(cat.id);
+                      }}
+                      className="text-xs text-red-500 hover:text-red-600 px-2 py-1 rounded-md hover:bg-red-50 transition-colors"
+                    >
+                      삭제
+                    </button>
+                  </div>
                 </div>
+                {cat.items.length === 0 ? (
+                  <div className="px-4 py-6 text-center text-gray-400 text-sm">항목이 없습니다</div>
+                ) : (
+                  <div className="divide-y divide-gray-50">
+                    {cat.items.map((item, i) => (
+                      <div key={item.id} className="px-4 py-3 hover:bg-gray-50 transition-colors">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className="w-5 h-5 rounded-full bg-blue-50 text-blue-600 text-xs font-bold flex items-center justify-center flex-shrink-0">
+                                {i + 1}
+                              </span>
+                              <p className="text-sm font-medium text-gray-900">{item.question}</p>
+                            </div>
+                            <p className="text-sm text-gray-500 whitespace-pre-wrap ml-7 leading-relaxed">{item.answer}</p>
+                          </div>
+                          <button
+                            onClick={() => {
+                              if (window.confirm('이 항목을 삭제하시겠습니까?'))
+                                deleteItemMutation.mutate(item.id);
+                            }}
+                            className="text-xs text-red-500 hover:text-red-600 px-2 py-1 rounded-md hover:bg-red-50 transition-colors flex-shrink-0"
+                          >
+                            삭제
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             ))}
           </div>
-        ))}
+        )}
       </div>
 
-      <Modal
-        isOpen={showCategoryModal}
-        onClose={() => setShowCategoryModal(false)}
-        title="카테고리 추가"
+      <Modal isOpen={showCategoryModal} onClose={() => setShowCategoryModal(false)} title="카테고리 추가"
         footer={
           <>
             <Button variant="secondary" onClick={() => setShowCategoryModal(false)}>취소</Button>
@@ -140,10 +172,7 @@ export function FAQManagement() {
         <Input label="카테고리 이름" value={categoryName} onChange={e => setCategoryName(e.target.value)} />
       </Modal>
 
-      <Modal
-        isOpen={showItemModal}
-        onClose={() => setShowItemModal(false)}
-        title="FAQ 항목 추가"
+      <Modal isOpen={showItemModal} onClose={() => setShowItemModal(false)} title="FAQ 항목 추가"
         footer={
           <>
             <Button variant="secondary" onClick={() => setShowItemModal(false)}>취소</Button>
