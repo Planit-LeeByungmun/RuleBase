@@ -21,6 +21,7 @@ export function FileViewer() {
   const [searchResults, setSearchResults] = useState<SearchMatch[]>([]);
   const [activeResultIdx, setActiveResultIdx] = useState(-1);
   const [searching, setSearching] = useState(false);
+  const [searchedOnce, setSearchedOnce] = useState(false);
 
   const { data: files } = useQuery({
     queryKey: ['files', 'all'],
@@ -70,12 +71,14 @@ export function FileViewer() {
     setSearchResults([]);
     setActiveResultIdx(-1);
     setSearching(false);
+    setSearchedOnce(false);
     pdfViewerRef.current?.clearHighlight();
   }, []);
 
   const executeSearch = useCallback(async () => {
     if (!searchKeyword.trim() || !pdfViewerRef.current) return;
     setSearching(true);
+    setSearchedOnce(true);
     const results = await pdfViewerRef.current.search(searchKeyword.trim());
     setSearchResults(results);
     setActiveResultIdx(results.length > 0 ? 0 : -1);
@@ -185,8 +188,8 @@ export function FileViewer() {
                 <button onClick={goNext} className="px-1 py-0.5 text-xs text-gray-600 hover:bg-gray-200 rounded" title="다음 (Enter)">▼</button>
               </>
             )}
-            {searchResults.length === 0 && activeResultIdx === -1 && searchKeyword && !searching && searchResults !== null && (
-              <span className="text-xs text-gray-400">결과 없음</span>
+            {searchedOnce && searchResults.length === 0 && searchKeyword && !searching && (
+              <span className="text-xs text-red-400">결과 없음</span>
             )}
             <button onClick={closeSearch} className="text-gray-400 hover:text-gray-600 text-sm px-1" title="닫기">&times;</button>
           </div>
@@ -242,14 +245,14 @@ function SearchResultsPanel({
     const parts = text.split(regex);
     return parts.map((part, i) =>
       regex.test(part)
-        ? <mark key={i} className="bg-yellow-300 text-yellow-900 rounded px-0.5">{part}</mark>
+        ? <mark key={i} className="bg-yellow-300 text-yellow-900 rounded px-0.5 font-semibold">{part}</mark>
         : <span key={i}>{part}</span>
     );
   }
 
   return (
-    <div className="border-b border-gray-200 bg-yellow-50 flex flex-col max-h-[40%]">
-      <div className="px-3 py-2 flex items-center justify-between border-b border-yellow-200">
+    <div className="border-b border-gray-200 bg-yellow-50 flex flex-col max-h-[50%] min-h-[120px]">
+      <div className="px-3 py-2 flex items-center justify-between border-b border-yellow-200 flex-shrink-0">
         <div className="flex items-center gap-2">
           <span className="text-xs font-semibold text-gray-700">검색 결과</span>
           <span className="text-xs font-medium px-1.5 py-0.5 rounded-full bg-yellow-200 text-yellow-800">
@@ -265,15 +268,15 @@ function SearchResultsPanel({
             ref={idx === activeIdx ? activeRef : undefined}
             onClick={() => onSelect(idx)}
             className={`px-3 py-2 cursor-pointer border-b border-yellow-100 transition-colors text-xs ${
-              idx === activeIdx ? 'bg-yellow-200' : 'hover:bg-yellow-100'
+              idx === activeIdx ? 'bg-yellow-200 border-l-2 border-l-yellow-500' : 'hover:bg-yellow-100'
             }`}
           >
-            <div className="flex items-center gap-2 mb-0.5">
-              <span className="font-medium text-gray-600">p.{match.page}</span>
+            <div className="flex items-center gap-2 mb-1">
+              <span className="font-semibold text-blue-600">p.{match.page}</span>
               <span className="text-gray-400">#{idx + 1}</span>
             </div>
-            <p className="text-gray-700 leading-relaxed break-all">
-              {highlightKeyword(match.context, keyword)}
+            <p className="text-gray-700 leading-relaxed break-words whitespace-pre-wrap">
+              {highlightKeyword(match.lineText || match.context, keyword)}
             </p>
           </div>
         ))}

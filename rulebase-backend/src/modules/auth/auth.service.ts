@@ -99,7 +99,7 @@ export async function requestPasswordReset(email: string) {
 
   if (result.rows.length === 0) {
     // Don't reveal whether user exists
-    return;
+    return { sent: false };
   }
 
   const user = result.rows[0];
@@ -112,11 +112,22 @@ export async function requestPasswordReset(email: string) {
     [user.id, token, expiresAt]
   );
 
+  const resetUrl = `${env.FRONTEND_URL}/reset-password/${token}`;
+
   try {
     await notificationService.sendPasswordReset(user.email, user.display_name, token);
   } catch (err) {
     console.error('Failed to send password reset email:', err);
+    console.log('=== 비밀번호 재설정 링크 (이메일 발송 실패) ===');
+    console.log(resetUrl);
+    console.log('================================================');
   }
+
+  // In development, return the reset URL directly
+  if (env.NODE_ENV === 'development') {
+    return { sent: true, resetUrl };
+  }
+  return { sent: true };
 }
 
 export async function resetPassword(token: string, newPassword: string) {

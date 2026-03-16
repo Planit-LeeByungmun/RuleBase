@@ -9,13 +9,21 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
 export interface SearchMatch {
   page: number;
   index: number;
+  matchLen: number;
   context: string;
+  lineText: string;
 }
 
 export interface PdfViewerHandle {
   search: (keyword: string) => Promise<SearchMatch[]>;
   goToMatch: (match: SearchMatch) => void;
   clearHighlight: () => void;
+}
+
+interface PageTextData {
+  text: string;
+  items: any[];
+  charToItem: { itemIdx: number; charOffset: number }[];
 }
 
 interface Props {
@@ -29,7 +37,7 @@ export const PdfViewer = forwardRef<PdfViewerHandle, Props>(function PdfViewer({
   const highlightCanvasRef = useRef<HTMLCanvasElement>(null);
   const pdfRef = useRef<pdfjsLib.PDFDocumentProxy | null>(null);
   const renderTaskRef = useRef<pdfjsLib.RenderTask | null>(null);
-  const pageTextsRef = useRef<{ text: string; items: any[] }[]>([]);
+  const pageTextsRef = useRef<PageTextData[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -37,46 +45,90 @@ export const PdfViewer = forwardRef<PdfViewerHandle, Props>(function PdfViewer({
   const [pageInput, setPageInput] = useState('1');
   const activeMatchRef = useRef<SearchMatch | null>(null);
   const textExtractedRef = useRef(false);
+  const cancelRef = useRef(false);
 
   // Load PDF document - show first page immediately, extract text in background
   useEffect(() => {
-    let cancelled = false;
+    cancelRef.current = false;
     setLoading(true);
     pageTextsRef.current = [];
     textExtractedRef.current = false;
 
     pdfjsLib.getDocument(src).promise.then((pdf) => {
-      if (cancelled) return;
+      if (cancelRef.current) return;
       pdfRef.current = pdf;
       setTotalPages(pdf.numPages);
       setCurrentPage(1);
       setPageInput('1');
-      setLoading(false); // Show first page immediately
+      setLoading(false);
 
-      // Extract text in background (lazy, non-blocking)
-      extractTextsInBackground(pdf, cancelled);
+      extractTextsInBackground(pdf);
+    }).catch((err) => {
+      console.error('[PdfViewer] Failed to load PDF:', err);
+      setLoading(false);
     });
 
     return () => {
-      cancelled = true;
+      cancelRef.current = true;
     };
   }, [src]);
 
-  async function extractTextsInBackground(pdf: pdfjsLib.PDFDocumentProxy, cancelled: boolean) {
-    const texts: { text: string; items: any[] }[] = [];
+  async function extractTextsInBackground(pdf: pdfjsLib.PDFDocumentProxy) {
+    const texts: PageTextData[] = [];
     for (let i = 1; i <= pdf.numPages; i++) {
-      if (cancelled) return;
+      if (cancelRef.current) return;
       try {
         const page = await pdf.getPage(i);
         const content = await page.getTextContent();
         const items = content.items as any[];
-        const text = items.map((item: any) => item.str).join('');
-        texts.push({ text, items });
-      } catch {
-        texts.push({ text: '', items: [] });
+
+        let text = '';
+        const charToItem: { itemIdx: number; charOffset: number }[] = [];
+        let lastY: number | null = null;
+        let lastEndX: number | null = null;
+
+        for (let idx = 0; idx < items.length; idx++) {
+          const item = items[idx];
+          if (item.str === undefined) continue;
+          const y = item.transform ? item.transform[5] : null;
+          const x = item.transform ? item.transform[4] : null;
+
+          if (text.length > 0) {
+            if (lastY !== null && y !== null && Math.abs(y - lastY) > 3) {
+              text += '\n';
+              charToItem.push({ itemIdx: -1, charOffset: 0 });
+            } else if (item.hasEOL) {
+              text += '\n';
+              charToItem.push({ itemIdx: -1, charOffset: 0 });
+            } else if (lastEndX !== null && x !== null) {
+              const fontSize = item.transform ? Math.sqrt(item.transform[0] ** 2 + item.transform[1] ** 2) : 10;
+              const gap = x - lastEndX;
+              if (gap > fontSize * 0.3) {
+                text += ' ';
+                charToItem.push({ itemIdx: -1, charOffset: 0 });
+              }
+            }
+          }
+
+          for (let c = 0; c < item.str.length; c++) {
+            charToItem.push({ itemIdx: idx, charOffset: c });
+          }
+          text += item.str;
+          if (y !== null) lastY = y;
+          if (x !== null && item.width != null) {
+            lastEndX = x + item.width;
+          } else {
+            lastEndX = null;
+          }
+        }
+
+        texts.push({ text, items, charToItem });
+      } catch (err) {
+        console.error(`[PdfViewer] Text extraction failed for page ${i}:`, err);
+        texts.push({ text: '', items: [], charToItem: [] });
       }
     }
-    if (!cancelled) {
+    if (!cancelRef.current) {
       pageTextsRef.current = texts;
       textExtractedRef.current = true;
     }
@@ -132,43 +184,49 @@ export const PdfViewer = forwardRef<PdfViewerHandle, Props>(function PdfViewer({
 
     const match = activeMatchRef.current;
     if (match && match.page === pageNum) {
-      drawHighlight(pageNum, match.index, fitScale);
+      drawHighlight(pageNum, match.index, match.matchLen, fitScale);
     } else {
       const hctx = highlightCanvas.getContext('2d');
       hctx?.clearRect(0, 0, highlightCanvas.width, highlightCanvas.height);
     }
   }, []);
 
-  const drawHighlight = useCallback(async (pageNum: number, charIndex: number, currentScale?: number) => {
+  const drawHighlight = useCallback(async (pageNum: number, charIndex: number, matchLen: number, currentScale?: number) => {
     const pdf = pdfRef.current;
     const highlightCanvas = highlightCanvasRef.current;
     if (!pdf || !highlightCanvas) return;
+
+    const pageData = pageTextsRef.current[pageNum - 1];
+    if (!pageData) return;
 
     const page = await pdf.getPage(pageNum);
     const usedScale = currentScale ?? scale;
     const dpr = window.devicePixelRatio;
     const viewport = page.getViewport({ scale: usedScale * dpr });
-    const content = await page.getTextContent();
-    const items = content.items as any[];
 
     const hctx = highlightCanvas.getContext('2d')!;
     hctx.clearRect(0, 0, highlightCanvas.width, highlightCanvas.height);
+    hctx.fillStyle = 'rgba(255, 220, 0, 0.4)';
 
-    let runningLen = 0;
-    for (const item of items) {
-      const str = item.str as string;
-      if (runningLen + str.length > charIndex) {
-        const tx = pdfjsLib.Util.transform(viewport.transform, item.transform);
-        const x = tx[4];
-        const y = tx[5];
-        const fontSize = Math.sqrt(tx[0] * tx[0] + tx[1] * tx[1]);
-        const width = item.width * usedScale * dpr;
+    const charToItem = pageData.charToItem;
+    const highlightedItems = new Set<number>();
 
-        hctx.fillStyle = 'rgba(255, 220, 0, 0.4)';
-        hctx.fillRect(x, y - fontSize, width, fontSize * 1.2);
-        break;
+    for (let ci = charIndex; ci < charIndex + matchLen && ci < charToItem.length; ci++) {
+      const mapping = charToItem[ci];
+      if (mapping && mapping.itemIdx >= 0) {
+        highlightedItems.add(mapping.itemIdx);
       }
-      runningLen += str.length;
+    }
+
+    for (const itemIdx of highlightedItems) {
+      const item = pageData.items[itemIdx];
+      if (!item || !item.transform) continue;
+      const tx = pdfjsLib.Util.transform(viewport.transform, item.transform);
+      const x = tx[4];
+      const y = tx[5];
+      const fontSize = Math.sqrt(tx[0] * tx[0] + tx[1] * tx[1]);
+      const width = item.width * usedScale * dpr;
+      hctx.fillRect(x, y - fontSize, width, fontSize * 1.2);
     }
   }, [scale]);
 
@@ -199,19 +257,26 @@ export const PdfViewer = forwardRef<PdfViewerHandle, Props>(function PdfViewer({
 
       // If text not yet extracted, do it now on demand
       if (!textExtractedRef.current && pdfRef.current) {
-        await extractTextsInBackground(pdfRef.current, false);
+        await extractTextsInBackground(pdfRef.current);
       }
 
       const kw = keyword.toLowerCase();
       pageTextsRef.current.forEach((pageData, pageIdx) => {
-        const text = pageData.text.toLowerCase();
+        const text = pageData.text;
+        const textLower = text.toLowerCase();
         let pos = 0;
-        while ((pos = text.indexOf(kw, pos)) !== -1) {
-          const contextStart = Math.max(0, pos - 20);
-          const contextEnd = Math.min(text.length, pos + kw.length + 20);
-          const rawContext = pageData.text.slice(contextStart, contextEnd);
+        while ((pos = textLower.indexOf(kw, pos)) !== -1) {
+          const lineStart = text.lastIndexOf('\n', pos - 1) + 1;
+          let lineEnd = text.indexOf('\n', pos + kw.length);
+          if (lineEnd === -1) lineEnd = text.length;
+          const lineText = text.slice(lineStart, lineEnd).trim();
+
+          const contextStart = Math.max(0, pos - 30);
+          const contextEnd = Math.min(text.length, pos + kw.length + 30);
+          const rawContext = text.slice(contextStart, contextEnd);
           const context = (contextStart > 0 ? '...' : '') + rawContext + (contextEnd < text.length ? '...' : '');
-          matches.push({ page: pageIdx + 1, index: pos, context });
+
+          matches.push({ page: pageIdx + 1, index: pos, matchLen: kw.length, context, lineText });
           pos += 1;
         }
       });
@@ -222,7 +287,7 @@ export const PdfViewer = forwardRef<PdfViewerHandle, Props>(function PdfViewer({
       if (match.page !== currentPage) {
         goToPage(match.page);
       } else {
-        drawHighlight(match.page, match.index);
+        drawHighlight(match.page, match.index, match.matchLen);
       }
     },
     clearHighlight: () => {

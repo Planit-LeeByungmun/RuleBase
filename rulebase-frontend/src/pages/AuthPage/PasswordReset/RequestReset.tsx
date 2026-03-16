@@ -11,12 +11,16 @@ export function RequestReset({ onBack }: Props) {
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
+  const [resetUrl, setResetUrl] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     try {
-      await authApi.requestPasswordReset(email);
+      const res = await authApi.requestPasswordReset(email);
+      if (res.data?.data?.resetUrl) {
+        setResetUrl(res.data.data.resetUrl);
+      }
     } catch {
       // Don't reveal if email exists
     } finally {
@@ -38,6 +42,12 @@ export function RequestReset({ onBack }: Props) {
           </p>
           <p className="text-xs text-gray-400 mt-1">링크는 1시간 동안 유효합니다</p>
         </div>
+        {resetUrl && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-left">
+            <p className="text-xs text-blue-700 font-medium mb-1">[개발 모드] 재설정 링크:</p>
+            <a href={resetUrl} className="text-xs text-blue-600 hover:underline break-all">{resetUrl}</a>
+          </div>
+        )}
         <Button variant="secondary" onClick={onBack} className="w-full">로그인으로 돌아가기</Button>
       </div>
     );

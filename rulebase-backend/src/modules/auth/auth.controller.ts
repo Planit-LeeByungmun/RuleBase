@@ -26,10 +26,11 @@ export async function login(req: Request, res: Response, next: NextFunction) {
 
 export async function requestPasswordReset(req: Request, res: Response, next: NextFunction) {
   try {
-    await authService.requestPasswordReset(req.body.email);
+    const result = await authService.requestPasswordReset(req.body.email);
     res.json({
       status: 'success',
       message: 'If the email exists, a reset link has been sent.',
+      ...(result?.resetUrl ? { data: { resetUrl: result.resetUrl } } : {}),
     });
   } catch (err) {
     next(err);
