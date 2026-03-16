@@ -71,14 +71,14 @@ export function RegisterForm({ onSuccess }: Props) {
         <p className="text-lg font-semibold text-gray-900">회원가입</p>
         <p className="text-sm text-gray-500">계정을 생성하세요</p>
       </div>
-      <Input label="Email *" type="email" value={form.email} onChange={e => update('email', e.target.value)} error={errors.email} />
+      <Input label="이메일 *" type="email" lang="en" value={form.email} onChange={e => update('email', e.target.value)} error={errors.email} />
       <div className="grid grid-cols-2 gap-3">
-        <Input label="Username *" value={form.username} onChange={e => update('username', e.target.value)} error={errors.username} placeholder="Letters, numbers, _" />
-        <Input label="Name *" value={form.displayName} onChange={e => update('displayName', e.target.value)} error={errors.displayName} />
+        <Input label="사용자명 *" value={form.username} onChange={e => update('username', e.target.value)} error={errors.username} placeholder="영문, 숫자, _" />
+        <Input label="이름 *" value={form.displayName} onChange={e => update('displayName', e.target.value)} error={errors.displayName} />
       </div>
-      <Input label="Department" value={form.department} onChange={e => update('department', e.target.value)} placeholder="Optional" />
+      <Input label="부서" value={form.department} onChange={e => update('department', e.target.value)} placeholder="선택사항" />
       <div>
-        <Input label="Password *" type="password" value={form.password} onChange={e => update('password', e.target.value)} error={errors.password} />
+        <Input label="비밀번호 *" type="password" lang="en" value={form.password} onChange={e => update('password', e.target.value)} error={errors.password} />
         {form.password && (
           <div className={`flex items-center gap-1.5 text-xs mt-1.5 ${passwordValid ? 'text-green-600' : 'text-amber-500'}`}>
             <span>{passwordValid ? '✅' : '⚠️'}</span>
@@ -86,7 +86,7 @@ export function RegisterForm({ onSuccess }: Props) {
           </div>
         )}
       </div>
-      <Input label="Confirm Password *" type="password" value={form.confirmPassword} onChange={e => update('confirmPassword', e.target.value)} error={errors.confirmPassword} />
+      <Input label="비밀번호 확인 *" type="password" value={form.confirmPassword} onChange={e => update('confirmPassword', e.target.value)} error={errors.confirmPassword} />
       {errors.general && (
         <div className="flex items-center gap-2 text-sm text-red-600 bg-red-50 p-3 rounded-lg">
           <span>⚠️</span>
