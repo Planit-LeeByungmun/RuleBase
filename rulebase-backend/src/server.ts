@@ -10,7 +10,7 @@ async function startServer() {
     console.log('Database connected');
 
     app.listen(PORT, () => {
-      console.log(`RuleBase backend running on http://localhost:${PORT}`);
+      console.log(`RuleBaseEx backend running on http://localhost:${PORT}`);
     });
   } catch (err) {
     console.error('Failed to start server:', err);

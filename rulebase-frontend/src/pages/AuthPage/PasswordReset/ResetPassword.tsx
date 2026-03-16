@@ -69,7 +69,7 @@ export function ResetPassword() {
         </div>
 
         <p className="text-center text-blue-300 text-xs mt-6">
-          &copy; 2026 RuleBase. All rights reserved.
+          &copy; 2026 RuleBaseEx. All rights reserved.
         </p>
       </div>
     </div>

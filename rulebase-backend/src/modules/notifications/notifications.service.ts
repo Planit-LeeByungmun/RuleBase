@@ -26,7 +26,7 @@ export async function sendRegistrationPending(adminEmail: string, userData: { us
   await transporter.sendMail({
     from: env.FROM_EMAIL,
     to: adminEmail,
-    subject: '[RuleBase] 새로운 회원가입 승인 요청',
+    subject: '[RuleBaseEx] 새로운 회원가입 승인 요청',
     html,
   });
 }
@@ -40,7 +40,7 @@ export async function sendRegistrationApproved(userEmail: string, displayName: s
   await transporter.sendMail({
     from: env.FROM_EMAIL,
     to: userEmail,
-    subject: '[RuleBase] 회원가입이 승인되었습니다',
+    subject: '[RuleBaseEx] 회원가입이 승인되었습니다',
     html,
   });
 }
@@ -54,7 +54,7 @@ export async function sendRegistrationRejected(userEmail: string, displayName: s
   await transporter.sendMail({
     from: env.FROM_EMAIL,
     to: userEmail,
-    subject: '[RuleBase] 회원가입 신청이 반려되었습니다',
+    subject: '[RuleBaseEx] 회원가입 신청이 반려되었습니다',
     html,
   });
 }
@@ -68,7 +68,7 @@ export async function sendPasswordReset(userEmail: string, displayName: string, 
   await transporter.sendMail({
     from: env.FROM_EMAIL,
     to: userEmail,
-    subject: '[RuleBase] 비밀번호 재설정 링크',
+    subject: '[RuleBaseEx] 비밀번호 재설정 링크',
     html,
   });
 }
@@ -92,7 +92,7 @@ export async function sendMentionNotification(
   await transporter.sendMail({
     from: env.FROM_EMAIL,
     to: mentionedUserEmail,
-    subject: `[RuleBase] ${questionerName}님이 질의에서 회원님을 멘션했습니다`,
+    subject: `[RuleBaseEx] ${questionerName}님이 질의에서 회원님을 멘션했습니다`,
     html,
   });
 }
@@ -116,7 +116,7 @@ export async function sendReplyNotification(
   await transporter.sendMail({
     from: env.FROM_EMAIL,
     to: questionerEmail,
-    subject: `[RuleBase] ${replierName}님이 회원님의 질의에 답글을 남겼습니다`,
+    subject: `[RuleBaseEx] ${replierName}님이 회원님의 질의에 답글을 남겼습니다`,
     html,
   });
 }

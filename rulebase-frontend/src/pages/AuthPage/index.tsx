@@ -28,7 +28,7 @@ export function AuthPage() {
           <div className="inline-flex items-center justify-center w-16 h-16 bg-white/10 backdrop-blur-sm rounded-2xl mb-4">
             <span className="text-3xl">📋</span>
           </div>
-          <h1 className="text-3xl font-bold text-white">RuleBase</h1>
+          <h1 className="text-3xl font-bold text-white">RuleBaseEx</h1>
           <p className="text-blue-200 text-sm mt-1">회사 규정 관리 시스템</p>
         </div>
 
@@ -61,7 +61,7 @@ export function AuthPage() {
 
         {/* Footer */}
         <p className="text-center text-blue-300 text-xs mt-6">
-          &copy; 2026 RuleBase. All rights reserved.
+          &copy; 2026 RuleBaseEx. All rights reserved.
         </p>
       </div>
     </div>
