@@ -49,7 +49,7 @@ export function RequestReset({ onBack }: Props) {
         <h3 className="text-lg font-semibold text-gray-900">비밀번호 재설정</h3>
         <p className="text-sm text-gray-500">가입한 이메일 주소를 입력하시면 재설정 링크를 보내드립니다.</p>
       </div>
-      <Input label="이메일" type="email" value={email} onChange={e => setEmail(e.target.value)} required />
+      <Input label="Email" type="email" value={email} onChange={e => setEmail(e.target.value)} required />
       <Button type="submit" loading={loading} className="w-full">재설정 링크 발송</Button>
       <button type="button" onClick={onBack} className="w-full text-sm text-gray-400 hover:text-blue-600 transition-colors">
         로그인으로 돌아가기

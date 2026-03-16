@@ -5,7 +5,7 @@ import { useUiStore } from '../../../store/uiStore';
 import { Button } from '../../../components/ui/Button';
 import { Input } from '../../../components/ui/Input';
 
-const PASSWORD_REGEX = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*#?&])[A-Za-z\d@$!%*#?&]{8,10}$/;
+const PASSWORD_REGEX = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*#?&])[A-Za-z\d@$!%*#?&]{8,}$/;
 
 export function ResetPassword() {
   const { token } = useParams<{ token: string }>();
@@ -18,7 +18,7 @@ export function ResetPassword() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!PASSWORD_REGEX.test(form.newPassword)) {
-      setError('8~10자리, 영문+숫자+특수문자(@$!%*#?&) 포함');
+      setError('8자리 이상, 영문+숫자+특수문자(@$!%*#?&) 포함');
       return;
     }
     if (form.newPassword !== form.confirmPassword) {
@@ -56,8 +56,8 @@ export function ResetPassword() {
 
         <div className="bg-white rounded-2xl shadow-2xl p-6">
           <form onSubmit={handleSubmit} className="space-y-4">
-            <Input label="새 비밀번호" type="password" value={form.newPassword} onChange={e => setForm(f => ({ ...f, newPassword: e.target.value }))} />
-            <Input label="비밀번호 확인" type="password" value={form.confirmPassword} onChange={e => setForm(f => ({ ...f, confirmPassword: e.target.value }))} />
+            <Input label="New Password" type="password" value={form.newPassword} onChange={e => setForm(f => ({ ...f, newPassword: e.target.value }))} />
+            <Input label="Confirm Password" type="password" value={form.confirmPassword} onChange={e => setForm(f => ({ ...f, confirmPassword: e.target.value }))} />
             {error && (
               <div className="flex items-center gap-2 text-sm text-red-600 bg-red-50 p-3 rounded-lg">
                 <span>⚠️</span>

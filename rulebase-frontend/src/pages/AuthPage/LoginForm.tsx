@@ -44,7 +44,7 @@ export function LoginForm({ onForgotPassword }: Props) {
         <p className="text-sm text-gray-500">계정에 로그인하세요</p>
       </div>
       <Input
-        label="이메일"
+        label="Email"
         type="email"
         value={email}
         onChange={e => setEmail(e.target.value)}
@@ -52,7 +52,7 @@ export function LoginForm({ onForgotPassword }: Props) {
         required
       />
       <Input
-        label="비밀번호"
+        label="Password"
         type="password"
         value={password}
         onChange={e => setPassword(e.target.value)}

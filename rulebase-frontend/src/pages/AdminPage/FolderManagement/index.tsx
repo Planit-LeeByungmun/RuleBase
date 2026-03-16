@@ -23,22 +23,36 @@ import { Button } from '../../../components/ui/Button';
 import { Input } from '../../../components/ui/Input';
 import { Modal } from '../../../components/ui/Modal';
 
-function flattenFolders(folders: Folder[], depth = 0): Array<{ folder: Folder; depth: number }> {
+function flattenFolders(
+  folders: Folder[],
+  expandedIds: Set<number>,
+  depth = 0,
+): Array<{ folder: Folder; depth: number }> {
   return folders.flatMap(f => [
     { folder: f, depth },
-    ...flattenFolders(f.children || [], depth + 1),
+    ...(expandedIds.has(f.id) ? flattenFolders(f.children || [], expandedIds, depth + 1) : []),
   ]);
+}
+
+function collectAllIds(folders: Folder[]): number[] {
+  return folders.flatMap(f => [f.id, ...collectAllIds(f.children || [])]);
 }
 
 function SortableFolderRow({
   folder,
   depth,
+  isExpanded,
+  hasChildren,
+  onToggle,
   onAddSub,
   onEdit,
   onDelete,
 }: {
   folder: Folder;
   depth: number;
+  isExpanded: boolean;
+  hasChildren: boolean;
+  onToggle: (id: number) => void;
   onAddSub: (id: number) => void;
   onEdit: (folder: Folder) => void;
   onDelete: (folder: Folder) => void;
@@ -73,6 +87,17 @@ function SortableFolderRow({
       >
         ⠿
       </button>
+      {hasChildren ? (
+        <button
+          onClick={() => onToggle(folder.id)}
+          className="w-5 h-5 flex items-center justify-center text-gray-400 hover:text-gray-600 flex-shrink-0 transition-transform"
+          title={isExpanded ? '접기' : '펼치기'}
+        >
+          <span className={`text-xs transition-transform inline-block ${isExpanded ? 'rotate-90' : ''}`}>▶</span>
+        </button>
+      ) : (
+        <span className="w-5 h-5 flex-shrink-0" />
+      )}
       <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
         depth === 0 ? 'bg-amber-50' : 'bg-gray-50'
       }`}>
@@ -123,6 +148,7 @@ export function FolderManagement() {
   const [editingFolder, setEditingFolder] = useState<Folder | null>(null);
   const [editName, setEditName] = useState('');
   const [activeDragId, setActiveDragId] = useState<number | null>(null);
+  const [expandedIds, setExpandedIds] = useState<Set<number>>(new Set());
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
@@ -175,7 +201,27 @@ export function FolderManagement() {
     onError: () => addToast('순서 변경에 실패했습니다.', 'error'),
   });
 
-  const flatFolders = useMemo(() => (folders ? flattenFolders(folders) : []), [folders]);
+  const flatFolders = useMemo(() => (folders ? flattenFolders(folders, expandedIds) : []), [folders, expandedIds]);
+
+  // Build a set of folder IDs that have children
+  const hasChildrenSet = useMemo(() => {
+    if (!folders) return new Set<number>();
+    const allFlat = flattenFolders(folders, new Set(collectAllIds(folders)));
+    const set = new Set<number>();
+    for (const { folder } of allFlat) {
+      if (folder.children && folder.children.length > 0) set.add(folder.id);
+    }
+    return set;
+  }, [folders]);
+
+  function toggleExpand(id: number) {
+    setExpandedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
   const siblingGroups = useMemo(() => getSiblingGroups(flatFolders), [flatFolders]);
 
   // Build a flat lookup for parent_id
@@ -260,6 +306,9 @@ export function FolderManagement() {
                     key={folder.id}
                     folder={folder}
                     depth={depth}
+                    isExpanded={expandedIds.has(folder.id)}
+                    hasChildren={hasChildrenSet.has(folder.id)}
+                    onToggle={toggleExpand}
                     onAddSub={(id) => { setParentId(id); setNewFolderName(''); setShowCreate(true); }}
                     onEdit={(f) => { setEditingFolder(f); setEditName(f.name); }}
                     onDelete={(f) => {
