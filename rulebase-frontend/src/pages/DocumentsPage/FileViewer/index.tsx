@@ -220,6 +220,8 @@ export function FileViewer() {
   );
 }
 
+const RESULTS_PER_PAGE = 10;
+
 function SearchResultsPanel({
   results,
   activeIdx,
@@ -233,10 +235,18 @@ function SearchResultsPanel({
   onSelect: (idx: number) => void;
   onClose: () => void;
 }) {
-  const activeRef = useRef<HTMLDivElement>(null);
+  const [page, setPage] = useState(0);
+  const totalPages = Math.ceil(results.length / RESULTS_PER_PAGE);
+  const pageStart = page * RESULTS_PER_PAGE;
+  const pageEnd = Math.min(pageStart + RESULTS_PER_PAGE, results.length);
+  const pageResults = results.slice(pageStart, pageEnd);
 
+  // Auto-switch page when activeIdx changes (e.g. via prev/next buttons)
   useEffect(() => {
-    activeRef.current?.scrollIntoView({ block: 'nearest' });
+    if (activeIdx >= 0) {
+      const targetPage = Math.floor(activeIdx / RESULTS_PER_PAGE);
+      if (targetPage !== page) setPage(targetPage);
+    }
   }, [activeIdx]);
 
   function highlightKeyword(text: string, kw: string) {
@@ -261,26 +271,49 @@ function SearchResultsPanel({
         </div>
         <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-sm">&times;</button>
       </div>
-      <div className="flex-1 overflow-y-auto">
-        {results.map((match, idx) => (
-          <div
-            key={`${match.page}-${match.index}`}
-            ref={idx === activeIdx ? activeRef : undefined}
-            onClick={() => onSelect(idx)}
-            className={`px-3 py-2 cursor-pointer border-b border-yellow-100 transition-colors text-xs ${
-              idx === activeIdx ? 'bg-yellow-200 border-l-2 border-l-yellow-500' : 'hover:bg-yellow-100'
-            }`}
-          >
-            <div className="flex items-center gap-2 mb-1">
-              <span className="font-semibold text-blue-600">p.{match.page}</span>
-              <span className="text-gray-400">#{idx + 1}</span>
+      <div className="flex-1 overflow-hidden">
+        {pageResults.map((match, i) => {
+          const globalIdx = pageStart + i;
+          return (
+            <div
+              key={`${match.page}-${match.index}`}
+              onClick={() => onSelect(globalIdx)}
+              className={`px-3 py-2 cursor-pointer border-b border-yellow-100 transition-colors text-xs ${
+                globalIdx === activeIdx ? 'bg-yellow-200 border-l-2 border-l-yellow-500' : 'hover:bg-yellow-100'
+              }`}
+            >
+              <div className="flex items-center gap-2 mb-1">
+                <span className="font-semibold text-blue-600">p.{match.page}</span>
+                <span className="text-gray-400">#{globalIdx + 1}</span>
+              </div>
+              <p className="text-gray-700 leading-relaxed break-words whitespace-pre-wrap line-clamp-2">
+                {highlightKeyword(match.lineText || match.context, keyword)}
+              </p>
             </div>
-            <p className="text-gray-700 leading-relaxed break-words whitespace-pre-wrap">
-              {highlightKeyword(match.lineText || match.context, keyword)}
-            </p>
-          </div>
-        ))}
+          );
+        })}
       </div>
+      {totalPages > 1 && (
+        <div className="px-3 py-1.5 flex items-center justify-center gap-2 border-t border-yellow-200 flex-shrink-0">
+          <button
+            onClick={() => setPage(p => Math.max(0, p - 1))}
+            disabled={page === 0}
+            className="px-1.5 py-0.5 text-xs text-gray-600 hover:bg-yellow-200 rounded disabled:opacity-30 disabled:cursor-not-allowed"
+          >
+            ◀
+          </button>
+          <span className="text-xs text-gray-600">
+            {page + 1} / {totalPages}
+          </span>
+          <button
+            onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
+            disabled={page >= totalPages - 1}
+            className="px-1.5 py-0.5 text-xs text-gray-600 hover:bg-yellow-200 rounded disabled:opacity-30 disabled:cursor-not-allowed"
+          >
+            ▶
+          </button>
+        </div>
+      )}
     </div>
   );
 }
