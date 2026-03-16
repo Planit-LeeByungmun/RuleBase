@@ -82,6 +82,31 @@ export interface ApiResponse<T> {
   message?: string;
 }
 
+export interface Inquiry {
+  id: number;
+  title: string;
+  body: string;
+  is_resolved: boolean;
+  created_at: string;
+  asked_by: number;
+  username: string;
+  display_name: string;
+  answer_count: number;
+}
+
+export interface InquiryDetail extends Omit<Inquiry, 'answer_count'> {
+  answers: InquiryAnswer[];
+}
+
+export interface InquiryAnswer {
+  id: number;
+  body: string;
+  created_at: string;
+  answered_by: number;
+  answerer_username: string;
+  answerer_display_name: string;
+}
+
 export interface PendingUser {
   id: number;
   email: string;

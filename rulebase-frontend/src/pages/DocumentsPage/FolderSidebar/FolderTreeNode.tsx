@@ -1,4 +1,5 @@
-import React from 'react';
+
+
 import type { Folder } from '../../../types';
 import { useFolderStore } from '../../../store/folderStore';
 

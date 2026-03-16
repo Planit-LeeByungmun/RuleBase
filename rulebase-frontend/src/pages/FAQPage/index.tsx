@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { AppShell } from '../../components/layout/AppShell';
 import { faqApi } from '../../api/faq';

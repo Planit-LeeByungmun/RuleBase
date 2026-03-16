@@ -115,3 +115,30 @@ export async function getRecentQuestions(userId: number, userRole: string, limit
 
   return result.rows;
 }
+
+export async function getRecentInquiries(limit = 5) {
+  const result = await pool.query(`
+    SELECT i.id, i.title, i.is_resolved, i.created_at,
+           u.display_name AS author_name,
+           COUNT(ia.id)::int AS answer_count
+    FROM inquiries i
+    JOIN users u ON i.asked_by = u.id
+    LEFT JOIN inquiry_answers ia ON ia.inquiry_id = i.id
+    GROUP BY i.id, u.display_name
+    ORDER BY i.created_at DESC
+    LIMIT $1
+  `, [limit]);
+  return result.rows;
+}
+
+export async function getRecentFaqCategories() {
+  const result = await pool.query(`
+    SELECT fc.id, fc.name,
+           COUNT(fi.id)::int AS item_count
+    FROM faq_categories fc
+    LEFT JOIN faq_items fi ON fi.category_id = fc.id
+    GROUP BY fc.id
+    ORDER BY fc.sort_order, fc.name
+  `);
+  return result.rows;
+}

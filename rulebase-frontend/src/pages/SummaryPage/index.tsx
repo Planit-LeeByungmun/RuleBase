@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { AppShell } from '../../components/layout/AppShell';
 import { foldersApi } from '../../api/folders';
@@ -98,7 +98,7 @@ function SummaryFolderNode({ folder, files, depth = 0 }: { folder: Folder; files
 }
 
 export function SummaryPage() {
-  const [expandAll, setExpandAll] = useState(true);
+  const [_expandAll, _setExpandAll] = useState(true);
 
   const { data: folders, isLoading: foldersLoading } = useQuery({
     queryKey: ['folders', 'tree'],

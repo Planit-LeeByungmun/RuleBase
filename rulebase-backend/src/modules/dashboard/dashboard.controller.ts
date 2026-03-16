@@ -6,15 +6,16 @@ export async function getDashboard(req: Request, res: Response, next: NextFuncti
     const userId = req.user!.id;
     const userRole = req.user!.role;
 
-    const [stats, recentFiles, recentQuestions] = await Promise.all([
+    const [stats, recentFiles, recentInquiries, faqCategories] = await Promise.all([
       dashboardService.getDashboardStats(userId, userRole),
       dashboardService.getRecentFiles(userId, userRole),
-      dashboardService.getRecentQuestions(userId, userRole),
+      dashboardService.getRecentInquiries(),
+      dashboardService.getRecentFaqCategories(),
     ]);
 
     res.json({
       status: 'success',
-      data: { stats, recentFiles, recentQuestions },
+      data: { stats, recentFiles, recentInquiries, faqCategories },
     });
   } catch (err) {
     next(err);

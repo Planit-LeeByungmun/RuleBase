@@ -18,7 +18,7 @@ export function MentionInput({ value, onChange, placeholder }: Props) {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [mentionStart, setMentionStart] = useState(-1);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const debounceRef = useRef<ReturnType<typeof setTimeout>>();
+  const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const val = e.target.value;
