@@ -9,7 +9,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   const navLinks = [
     { to: '/documents', label: '문서' },
-    { to: '/summary', label: '요약' },
     { to: '/faq', label: 'FAQ' },
     ...(isAdmin ? [{ to: '/admin', label: '관리자' }] : []),
   ];

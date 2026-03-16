@@ -7,13 +7,13 @@ import { FAQManagement } from './FAQManagement';
 type AdminTab = 'users' | 'folders' | 'faq';
 
 const tabs: { id: AdminTab; label: string; icon: string }[] = [
-  { id: 'users', label: '사용자 승인', icon: '👤' },
-  { id: 'folders', label: '폴더 관리', icon: '📁' },
   { id: 'faq', label: 'FAQ 관리', icon: '💡' },
+  { id: 'folders', label: '폴더 관리', icon: '📁' },
+  { id: 'users', label: '사용자 승인', icon: '👤' },
 ];
 
 export function AdminPage() {
-  const [tab, setTab] = useState<AdminTab>('users');
+  const [tab, setTab] = useState<AdminTab>('faq');
 
   return (
     <AppShell>
