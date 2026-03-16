@@ -40,6 +40,15 @@ export async function deleteFolder(req: Request, res: Response, next: NextFuncti
   }
 }
 
+export async function reorderFolders(req: Request, res: Response, next: NextFunction) {
+  try {
+    await foldersService.reorderFolders(req.body.items);
+    res.json({ status: 'success', message: 'Folders reordered' });
+  } catch (err) {
+    next(err);
+  }
+}
+
 export async function setFolderPermissions(req: Request, res: Response, next: NextFunction) {
   try {
     const folderId = parseInt(req.params.id, 10);

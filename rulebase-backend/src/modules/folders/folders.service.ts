@@ -98,8 +98,26 @@ export async function updateFolder(id: number, data: { name?: string; parentId?:
 }
 
 export async function deleteFolder(id: number) {
+  const folder = await pool.query('SELECT id FROM folders WHERE id = $1', [id]);
+  if (folder.rows.length === 0) throw new AppError('Folder not found', 404);
   const result = await pool.query('DELETE FROM folders WHERE id = $1 RETURNING id', [id]);
   if (result.rows.length === 0) throw new AppError('Folder not found', 404);
+}
+
+export async function reorderFolders(items: { id: number; sortOrder: number }[]) {
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    for (const item of items) {
+      await client.query('UPDATE folders SET sort_order = $1 WHERE id = $2', [item.sortOrder, item.id]);
+    }
+    await client.query('COMMIT');
+  } catch (err) {
+    await client.query('ROLLBACK');
+    throw err;
+  } finally {
+    client.release();
+  }
 }
 
 export async function setFolderPermissions(folderId: number, permissions: Array<{
