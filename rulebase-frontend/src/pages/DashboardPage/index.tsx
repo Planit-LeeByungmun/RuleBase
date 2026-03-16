@@ -1,21 +1,24 @@
-import { useState } from 'react';
+import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
 import { dashboardApi } from '../../api/dashboard';
 import { inquiriesApi } from '../../api/inquiries';
 import { useAuthStore } from '../../store/authStore';
 import { useUiStore } from '../../store/uiStore';
+import { useFolderStore } from '../../store/folderStore';
 import type { Inquiry, InquiryDetail } from '../../types';
 
 interface DashboardStats {
   total_files: number;
   total_folders: number;
-  unresolved_questions: number;
+  unresolved_inquiries: number;
   total_faq_items: number;
 }
 
 interface RecentFile {
   id: number;
   original_name: string;
+  folder_id: number;
   folder_name: string;
   uploader_name: string;
   created_at: string;
@@ -37,7 +40,7 @@ interface DashboardData {
 const statCards = [
   { key: 'total_files' as const, label: '총 문서 수', icon: '📄', gradient: 'from-blue-500 to-blue-600', light: 'bg-blue-50 text-blue-600' },
   { key: 'total_folders' as const, label: '총 폴더 수', icon: '📁', gradient: 'from-emerald-500 to-emerald-600', light: 'bg-emerald-50 text-emerald-600' },
-  { key: 'unresolved_questions' as const, label: '미해결 질문', icon: '❓', gradient: 'from-amber-500 to-orange-500', light: 'bg-amber-50 text-amber-600' },
+  { key: 'unresolved_inquiries' as const, label: '미해결 질의', icon: '❓', gradient: 'from-amber-500 to-orange-500', light: 'bg-amber-50 text-amber-600' },
   { key: 'total_faq_items' as const, label: 'FAQ 항목', icon: '💡', gradient: 'from-violet-500 to-purple-600', light: 'bg-violet-50 text-violet-600' },
 ];
 
@@ -149,6 +152,188 @@ function AnswerItem({ a, inquiryId, user, invalidateAll, isLastAnswer }: {
   );
 }
 
+type SearchFilter = 'title' | 'body' | 'title+body' | 'user';
+const searchFilterLabels: Record<SearchFilter, string> = {
+  'title': '제목',
+  'body': '내용',
+  'title+body': '제목+내용',
+  'user': '작성자',
+};
+
+function HighlightText({ text, keyword }: { text: string; keyword: string }) {
+  if (!keyword) return <>{text}</>;
+  const regex = new RegExp(`(${keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+  const parts = text.split(regex);
+  return (
+    <>
+      {parts.map((part, i) =>
+        regex.test(part)
+          ? <mark key={i} className="bg-yellow-200 text-yellow-900 rounded px-0.5">{part}</mark>
+          : <span key={i}>{part}</span>
+      )}
+    </>
+  );
+}
+
+function SearchResultItem({ inquiry, keyword, onSelect }: {
+  inquiry: Inquiry;
+  keyword: string;
+  onSelect: (id: number) => void;
+}) {
+  const { data: detail } = useQuery({
+    queryKey: ['inquiries', inquiry.id],
+    queryFn: async () => {
+      const res = await inquiriesApi.getOne(inquiry.id);
+      return res.data.data as InquiryDetail;
+    },
+  });
+
+  return (
+    <div className="rounded-xl border border-gray-200 overflow-hidden">
+      {/* Inquiry header */}
+      <div className="px-4 py-3 bg-gray-50 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          {inquiry.is_resolved ? (
+            <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-green-100 text-green-700">해결</span>
+          ) : (
+            <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-orange-100 text-orange-700">미해결</span>
+          )}
+          <button
+            onClick={() => onSelect(inquiry.id)}
+            className="text-sm font-bold text-blue-600 hover:text-blue-800 hover:underline text-left"
+          >
+            <HighlightText text={inquiry.title} keyword={keyword} />
+          </button>
+        </div>
+        <div className="flex items-center gap-2 text-xs text-gray-400">
+          <span><HighlightText text={inquiry.display_name} keyword={keyword} /></span>
+          <span>·</span>
+          <span>{formatDateTime(inquiry.created_at)}</span>
+        </div>
+      </div>
+      {/* Inquiry body */}
+      <div className="px-4 py-3 text-sm text-gray-700 whitespace-pre-wrap leading-relaxed border-b border-gray-100">
+        <HighlightText text={inquiry.body} keyword={keyword} />
+      </div>
+      {/* Answers */}
+      {detail?.answers && detail.answers.length > 0 ? (
+        <div className="divide-y divide-gray-50">
+          {detail.answers.map(a => (
+            <div key={a.id} className="px-4 py-3">
+              <div className="flex items-center gap-2 mb-1">
+                <span className="w-5 h-5 rounded-full bg-blue-100 text-blue-700 text-[10px] font-bold flex items-center justify-center">
+                  {a.answerer_display_name.charAt(0)}
+                </span>
+                <span className="text-xs font-medium text-gray-700">{a.answerer_display_name}</span>
+                <span className="text-xs text-gray-400">{formatDateTime(a.created_at)}</span>
+              </div>
+              <p className="text-sm text-gray-600 whitespace-pre-wrap leading-relaxed ml-7">
+                <HighlightText text={a.body} keyword={keyword} />
+              </p>
+            </div>
+          ))}
+        </div>
+      ) : detail ? (
+        <div className="px-4 py-3 text-xs text-gray-400">댓글 없음</div>
+      ) : (
+        <div className="px-4 py-3">
+          <div className="h-6 bg-gray-100 rounded animate-pulse" />
+        </div>
+      )}
+    </div>
+  );
+}
+
+function SearchResultModal({ keyword, filter, inquiries, page, pageSize, onPageChange, onClose, onSelect }: {
+  keyword: string;
+  filter: SearchFilter;
+  inquiries: Inquiry[];
+  page: number;
+  pageSize: number;
+  onPageChange: (p: number) => void;
+  onClose: () => void;
+  onSelect: (id: number) => void;
+}) {
+  const kw = keyword.toLowerCase();
+  const filtered = useMemo(() =>
+    inquiries.filter(inq => {
+      switch (filter) {
+        case 'title': return inq.title.toLowerCase().includes(kw);
+        case 'body': return inq.body.toLowerCase().includes(kw);
+        case 'title+body': return inq.title.toLowerCase().includes(kw) || inq.body.toLowerCase().includes(kw);
+        case 'user': return inq.display_name.toLowerCase().includes(kw);
+      }
+    }), [inquiries, filter, kw]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const paged = filtered.slice((page - 1) * pageSize, page * pageSize);
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
+      <div className="absolute inset-0 bg-black/50" onClick={onClose} />
+      <div className="relative bg-white rounded-xl shadow-xl w-full max-w-3xl mx-4 max-h-[85vh] flex flex-col">
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+          <div className="flex items-center gap-2">
+            <h2 className="text-base font-semibold text-gray-900">검색 결과</h2>
+            <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-blue-100 text-blue-600">
+              {filtered.length}건
+            </span>
+            <span className="text-xs text-gray-400">
+              &quot;{keyword}&quot; · {searchFilterLabels[filter]}
+            </span>
+          </div>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-xl leading-none">&times;</button>
+        </div>
+
+        {/* Body */}
+        <div className="flex-1 overflow-y-auto p-5 space-y-4">
+          {filtered.length === 0 ? (
+            <div className="py-12 text-center text-gray-400 text-sm">검색 결과가 없습니다</div>
+          ) : (
+            paged.map(inq => (
+              <SearchResultItem key={inq.id} inquiry={inq} keyword={keyword} onSelect={onSelect} />
+            ))
+          )}
+        </div>
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="flex items-center justify-center gap-1 px-5 py-3 border-t border-gray-100">
+            <button
+              onClick={() => onPageChange(page - 1)}
+              disabled={page <= 1}
+              className="px-2 py-1 text-xs text-gray-600 rounded hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+            >
+              ‹ 이전
+            </button>
+            {Array.from({ length: totalPages }).map((_, i) => (
+              <button
+                key={i}
+                onClick={() => onPageChange(i + 1)}
+                className={`w-7 h-7 text-xs rounded transition-colors ${
+                  page === i + 1
+                    ? 'bg-blue-500 text-white font-bold'
+                    : 'text-gray-600 hover:bg-gray-100'
+                }`}
+              >
+                {i + 1}
+              </button>
+            ))}
+            <button
+              onClick={() => onPageChange(page + 1)}
+              disabled={page >= totalPages}
+              className="px-2 py-1 text-xs text-gray-600 rounded hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+            >
+              다음 ›
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function InquirySection() {
   const user = useAuthStore(s => s.user);
   const addToast = useUiStore(s => s.addToast);
@@ -159,6 +344,11 @@ function InquirySection() {
   const [answerBody, setAnswerBody] = useState('');
   const [editing, setEditing] = useState(false);
   const [editForm, setEditForm] = useState({ title: '', body: '' });
+  const [searchFilter, setSearchFilter] = useState<SearchFilter>('title+body');
+  const [searchKeyword, setSearchKeyword] = useState('');
+  const [searchSubmitted, setSearchSubmitted] = useState('');
+  const [searchPage, setSearchPage] = useState(1);
+  const SEARCH_PAGE_SIZE = 5;
 
   const { data: inquiries, isLoading } = useQuery({
     queryKey: ['inquiries'],
@@ -389,7 +579,7 @@ function InquirySection() {
           onClick={() => setShowForm(!showForm)}
           className="text-xs font-medium px-3 py-1.5 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
         >
-          질문 작성
+          질의 작성
         </button>
       </div>
 
@@ -428,6 +618,69 @@ function InquirySection() {
         </div>
       )}
 
+      {/* Search bar */}
+      <div className="px-5 pt-3">
+        <form
+          onSubmit={e => {
+            e.preventDefault();
+            if (searchKeyword.trim()) {
+              setSearchSubmitted(searchKeyword.trim());
+              setSearchPage(1);
+            }
+          }}
+          className="flex items-center gap-2"
+        >
+          <select
+            value={searchFilter}
+            onChange={e => setSearchFilter(e.target.value as SearchFilter)}
+            className="px-2 py-1.5 border border-gray-300 rounded-lg text-xs text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+          >
+            {(Object.keys(searchFilterLabels) as SearchFilter[]).map(key => (
+              <option key={key} value={key}>{searchFilterLabels[key]}</option>
+            ))}
+          </select>
+          <div className="flex-1 relative">
+            <input
+              type="text"
+              value={searchKeyword}
+              onChange={e => setSearchKeyword(e.target.value)}
+              placeholder="검색어를 입력하세요..."
+              className="w-full px-3 py-1.5 pr-8 border border-gray-300 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            {searchKeyword && (
+              <button
+                type="button"
+                onClick={() => { setSearchKeyword(''); setSearchSubmitted(''); }}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 text-xs"
+              >
+                ✕
+              </button>
+            )}
+          </div>
+          <button
+            type="submit"
+            disabled={!searchKeyword.trim()}
+            className="px-3 py-1.5 bg-blue-500 text-white text-xs rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            검색
+          </button>
+        </form>
+      </div>
+
+      {/* Search Result Modal */}
+      {searchSubmitted && (
+        <SearchResultModal
+          keyword={searchSubmitted}
+          filter={searchFilter}
+          inquiries={inquiries ?? []}
+          page={searchPage}
+          pageSize={SEARCH_PAGE_SIZE}
+          onPageChange={setSearchPage}
+          onClose={() => { setSearchSubmitted(''); setSearchKeyword(''); }}
+          onSelect={(id) => { setSearchSubmitted(''); setSearchKeyword(''); setSelectedId(id); }}
+        />
+      )}
+
       <div className="px-5 pb-4">
         {isLoading ? (
           <div className="space-y-2 pt-4">
@@ -444,7 +697,7 @@ function InquirySection() {
                 <th className="text-left py-2 font-medium w-16">상태</th>
                 <th className="text-left py-2 font-medium">제목</th>
                 <th className="text-left py-2 font-medium w-24">작성자</th>
-                <th className="text-left py-2 font-medium w-28">작성일</th>
+                <th className="text-left py-2 font-medium w-36">작성일시</th>
                 <th className="text-right py-2 font-medium w-16">댓글</th>
               </tr>
             </thead>
@@ -467,7 +720,7 @@ function InquirySection() {
                     </button>
                   </td>
                   <td className="py-2.5 text-xs text-gray-500">{inq.display_name}</td>
-                  <td className="py-2.5 text-xs text-gray-400">{formatDate(inq.created_at)}</td>
+                  <td className="py-2.5 text-xs text-gray-400">{formatDateTime(inq.created_at)}</td>
                   <td className="py-2.5 text-right">
                     <span className="text-xs font-medium px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-600">{inq.answer_count}</span>
                   </td>
@@ -475,6 +728,117 @@ function InquirySection() {
               ))}
             </tbody>
           </table>
+        )}
+      </div>
+    </div>
+  );
+}
+
+const SCROLL_ITEM_HEIGHT = 56; // approx height of each file row
+const VISIBLE_COUNT = 3;
+const CONTAINER_HEIGHT = SCROLL_ITEM_HEIGHT * VISIBLE_COUNT;
+
+function RecentFilesCard({ files, isLoading }: { files: RecentFile[]; isLoading: boolean }) {
+  const navigate = useNavigate();
+  const { setSelectedFolder, setSelectedFile, toggleFolder, expandedFolderIds } = useFolderStore();
+  const oneWeekAgo = useMemo(() => {
+    const d = new Date();
+    d.setDate(d.getDate() - 7);
+    return d;
+  }, []);
+  const recentFiles = useMemo(() => files.filter(f => new Date(f.created_at) >= oneWeekAgo), [files, oneWeekAgo]);
+  const needsScroll = recentFiles.length > VISIBLE_COUNT;
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const pausedRef = useRef(false);
+
+  useEffect(() => {
+    if (!needsScroll || !scrollRef.current) return;
+    const el = scrollRef.current;
+    let animId: number;
+    let start: number | null = null;
+    const totalHeight = el.scrollHeight / 2;
+    const speed = 30;
+
+    const step = (timestamp: number) => {
+      if (pausedRef.current) {
+        animId = requestAnimationFrame(step);
+        start = null;
+        return;
+      }
+      if (start === null) start = timestamp;
+      const elapsed = (timestamp - start) / 1000;
+      const pos = (elapsed * speed) % totalHeight;
+      el.scrollTop = pos;
+      animId = requestAnimationFrame(step);
+    };
+
+    animId = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(animId);
+  }, [needsScroll, recentFiles]);
+
+  const handleFileClick = useCallback((file: RecentFile) => {
+    pausedRef.current = true;
+    if (!expandedFolderIds.has(file.folder_id)) {
+      toggleFolder(file.folder_id);
+    }
+    setSelectedFolder(file.folder_id);
+    setSelectedFile(file.id);
+    navigate('/documents');
+  }, [expandedFolderIds, toggleFolder, setSelectedFolder, setSelectedFile, navigate]);
+
+  const fileItems = (list: RecentFile[]) =>
+    list.map((file, i) => (
+      <div
+        key={`${file.id}-${i}`}
+        onClick={() => handleFileClick(file)}
+        className="flex items-center gap-3 p-3 rounded-lg hover:bg-blue-50 transition-colors cursor-pointer"
+      >
+        <div className="w-9 h-9 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
+          <span className="text-blue-500 text-sm">📋</span>
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-medium text-blue-700 truncate hover:underline">{file.original_name}</p>
+          <p className="text-xs text-gray-400">{file.folder_name} · {file.uploader_name}</p>
+        </div>
+        <span className="text-xs text-gray-400 flex-shrink-0">{formatDate(file.created_at)}</span>
+      </div>
+    ));
+
+  return (
+    <div className="bg-white rounded-xl shadow-sm border border-gray-100">
+      <div className="px-5 py-4 flex items-center gap-2">
+        <span className="text-base">📄</span>
+        <h3 className="text-sm font-semibold text-gray-900">
+          최근 업로드된 파일
+          {!isLoading && (
+            <span className="text-xs font-medium text-gray-400 ml-1">({recentFiles.length})</span>
+          )}
+        </h3>
+      </div>
+      <div className="px-5 pb-4">
+        {isLoading ? (
+          <div className="space-y-2">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="h-14 bg-gray-100 rounded-lg animate-pulse" />
+            ))}
+          </div>
+        ) : !recentFiles.length ? (
+          <div className="py-8 text-center text-gray-400 text-sm">최근 일주일 내 업로드된 파일이 없습니다</div>
+        ) : needsScroll ? (
+          <div
+            ref={scrollRef}
+            className="overflow-hidden"
+            style={{ height: CONTAINER_HEIGHT }}
+          >
+            <div className="space-y-2">
+              {fileItems(recentFiles)}
+              {fileItems(recentFiles)}
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {fileItems(recentFiles)}
+          </div>
         )}
       </div>
     </div>
@@ -490,12 +854,22 @@ export function DashboardPanel() {
     },
   });
 
+  const { data: inquiries } = useQuery({
+    queryKey: ['inquiries'],
+    queryFn: async () => {
+      const res = await inquiriesApi.getAll();
+      return res.data.data as Inquiry[];
+    },
+  });
+
+  const unresolvedCount = inquiries?.filter(i => !i.is_resolved).length ?? 0;
+
   return (
     <div className="flex-1 overflow-y-auto bg-gray-50 p-6 space-y-6">
       <h2 className="text-xl font-bold text-gray-900">대시보드</h2>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-4 gap-3">
         {statCards.map(card => (
           <div key={card.key} className="relative overflow-hidden bg-white rounded-xl shadow-sm border border-gray-100 p-4 hover:shadow-md transition-shadow">
             <div className={`absolute top-0 right-0 w-20 h-20 bg-gradient-to-br ${card.gradient} opacity-5 rounded-bl-full`} />
@@ -506,6 +880,8 @@ export function DashboardPanel() {
             <p className="text-2xl font-bold text-gray-900">
               {isLoading ? (
                 <span className="inline-block w-10 h-7 bg-gray-200 rounded animate-pulse" />
+              ) : card.key === 'unresolved_inquiries' ? (
+                unresolvedCount.toLocaleString()
               ) : (
                 (data?.stats[card.key] ?? 0).toLocaleString()
               )}
@@ -515,34 +891,7 @@ export function DashboardPanel() {
       </div>
 
       {/* Recent Files */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100">
-        <div className="px-5 py-4 flex items-center gap-2">
-          <span className="text-base">📄</span>
-          <h3 className="text-sm font-semibold text-gray-900">최근 업로드된 파일</h3>
-        </div>
-        <div className="px-5 pb-4 space-y-2">
-          {isLoading ? (
-            Array.from({ length: 3 }).map((_, i) => (
-              <div key={i} className="h-14 bg-gray-100 rounded-lg animate-pulse" />
-            ))
-          ) : !data?.recentFiles.length ? (
-            <div className="py-8 text-center text-gray-400 text-sm">파일이 없습니다</div>
-          ) : (
-            data.recentFiles.map(file => (
-              <div key={file.id} className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
-                <div className="w-9 h-9 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
-                  <span className="text-blue-500 text-sm">📋</span>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-900 truncate">{file.original_name}</p>
-                  <p className="text-xs text-gray-400">{file.folder_name} · {file.uploader_name}</p>
-                </div>
-                <span className="text-xs text-gray-400 flex-shrink-0">{formatDate(file.created_at)}</span>
-              </div>
-            ))
-          )}
-        </div>
-      </div>
+      <RecentFilesCard files={data?.recentFiles ?? []} isLoading={isLoading} />
 
       {/* User Inquiries - full CRUD */}
       <InquirySection />

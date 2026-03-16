@@ -7,7 +7,7 @@ export async function getDashboardStats(userId: number, userRole: string) {
       SELECT
         (SELECT COUNT(*) FROM files)::int AS total_files,
         (SELECT COUNT(*) FROM folders)::int AS total_folders,
-        (SELECT COUNT(*) FROM questions WHERE is_resolved = false)::int AS unresolved_questions,
+        (SELECT COUNT(*) FROM inquiries WHERE is_resolved = false)::int AS unresolved_inquiries,
         (SELECT COUNT(*) FROM faq_items)::int AS total_faq_items
     `);
     return result.rows[0];
@@ -24,14 +24,14 @@ export async function getDashboardStats(userId: number, userRole: string) {
   }
 
   if (readableFolderIds.length === 0) {
-    return { total_files: 0, total_folders: 0, unresolved_questions: 0, total_faq_items: 0 };
+    return { total_files: 0, total_folders: 0, unresolved_inquiries: 0, total_faq_items: 0 };
   }
 
   const result = await pool.query(`
     SELECT
       (SELECT COUNT(*) FROM files WHERE folder_id = ANY($1))::int AS total_files,
       (SELECT COUNT(*) FROM folders WHERE id = ANY($1))::int AS total_folders,
-      (SELECT COUNT(*) FROM questions q JOIN files f ON q.file_id = f.id WHERE f.folder_id = ANY($1) AND q.is_resolved = false)::int AS unresolved_questions,
+      (SELECT COUNT(*) FROM inquiries WHERE is_resolved = false)::int AS unresolved_inquiries,
       (SELECT COUNT(*) FROM faq_items)::int AS total_faq_items
   `, [readableFolderIds]);
 
@@ -41,7 +41,7 @@ export async function getDashboardStats(userId: number, userRole: string) {
 export async function getRecentFiles(userId: number, userRole: string, limit = 10) {
   if (userRole === 'admin') {
     const result = await pool.query(`
-      SELECT f.id, f.original_name, f.created_at,
+      SELECT f.id, f.original_name, f.folder_id, f.created_at,
              fo.name AS folder_name,
              u.display_name AS uploader_name
       FROM files f
@@ -63,7 +63,7 @@ export async function getRecentFiles(userId: number, userRole: string, limit = 1
   if (readableFolderIds.length === 0) return [];
 
   const result = await pool.query(`
-    SELECT f.id, f.original_name, f.created_at,
+    SELECT f.id, f.original_name, f.folder_id, f.created_at,
            fo.name AS folder_name,
            u.display_name AS uploader_name
     FROM files f

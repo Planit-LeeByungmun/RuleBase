@@ -30,9 +30,9 @@ function App() {
           <Route element={<ProtectedRoute />}>
             <Route path="/documents" element={<DocumentsPage />} />
             <Route path="/summary" element={<SummaryPage />} />
-            <Route path="/faq" element={<FAQPage />} />
           </Route>
           <Route element={<ProtectedRoute requireAdmin />}>
+            <Route path="/faq" element={<FAQPage />} />
             <Route path="/admin" element={<AdminPage />} />
           </Route>
           <Route path="*" element={<Navigate to="/documents" replace />} />

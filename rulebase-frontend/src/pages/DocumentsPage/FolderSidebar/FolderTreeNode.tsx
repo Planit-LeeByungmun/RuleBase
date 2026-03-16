@@ -5,9 +5,10 @@ import { useFolderStore } from '../../../store/folderStore';
 
 interface Props {
   folder: Folder;
+  fileCountMap: Map<number, number>;
 }
 
-export function FolderTreeNode({ folder }: Props) {
+export function FolderTreeNode({ folder, fileCountMap }: Props) {
   const { selectedFolderId, expandedFolderIds, setSelectedFolder, toggleFolder } = useFolderStore();
   const isExpanded = expandedFolderIds.has(folder.id);
   const isSelected = selectedFolderId === folder.id;
@@ -31,11 +32,14 @@ export function FolderTreeNode({ folder }: Props) {
         )}
         <span className="text-yellow-500 text-sm">📁</span>
         <span className="text-sm truncate">{folder.name}</span>
+        {(fileCountMap.get(folder.id) ?? 0) > 0 && (
+          <span className="text-xs text-gray-400 ml-1">({fileCountMap.get(folder.id)})</span>
+        )}
       </div>
       {isExpanded && hasChildren && (
         <div className="ml-4 border-l border-gray-200">
           {folder.children.map(child => (
-            <FolderTreeNode key={child.id} folder={child} />
+            <FolderTreeNode key={child.id} folder={child} fileCountMap={fileCountMap} />
           ))}
         </div>
       )}

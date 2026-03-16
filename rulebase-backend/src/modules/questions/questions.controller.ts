@@ -13,6 +13,16 @@ export async function getQuestions(req: Request, res: Response, next: NextFuncti
   }
 }
 
+export async function getUnresolvedCounts(req: Request, res: Response, next: NextFunction) {
+  try {
+    const fileIds = (req.query.fileIds as string || '').split(',').map(Number).filter(n => !isNaN(n));
+    const counts = await questionsService.getUnresolvedCounts(fileIds);
+    res.json({ status: 'success', data: counts });
+  } catch (err) {
+    next(err);
+  }
+}
+
 export async function createQuestion(req: Request, res: Response, next: NextFunction) {
   try {
     const question = await questionsService.createQuestion({

@@ -29,6 +29,18 @@ export async function getQuestions(fileId: number) {
   return result.rows;
 }
 
+export async function getUnresolvedCounts(fileIds: number[]) {
+  if (fileIds.length === 0) return [];
+  const result = await pool.query(
+    `SELECT file_id, COUNT(*)::int as unresolved_count
+     FROM questions
+     WHERE file_id = ANY($1) AND is_resolved = FALSE
+     GROUP BY file_id`,
+    [fileIds]
+  );
+  return result.rows as { file_id: number; unresolved_count: number }[];
+}
+
 export async function createQuestion(data: {
   fileId: number;
   askedBy: number;

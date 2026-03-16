@@ -32,6 +32,7 @@ export function QAPanel({ fileId }: Props) {
     mutationFn: () => questionsApi.create({ fileId, body: newQuestion }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['questions', fileId] });
+      queryClient.invalidateQueries({ queryKey: ['questions', 'unresolved-counts'] });
       setNewQuestion('');
       addToast('질의가 등록되었습니다.', 'success');
     },
@@ -51,11 +52,14 @@ export function QAPanel({ fileId }: Props) {
 
   const resolveMutation = useMutation({
     mutationFn: (questionId: number) => questionsApi.resolve(questionId),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['questions', fileId] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['questions', fileId] });
+      queryClient.invalidateQueries({ queryKey: ['questions', 'unresolved-counts'] });
+    },
   });
 
   return (
-    <div className="w-80 min-w-80 bg-white border-l border-gray-200 flex flex-col">
+    <div className="w-full bg-white flex flex-col h-full">
       <div className="p-3 border-b flex items-center justify-between">
         <h3 className="font-semibold text-sm text-gray-700">Q&A ({questions?.length || 0})</h3>
         <button onClick={() => setIsCollapsed(!isCollapsed)} className="text-gray-400 hover:text-gray-600 text-xs">
@@ -73,7 +77,7 @@ export function QAPanel({ fileId }: Props) {
             {questions?.map(q => (
               <div key={q.id} className={`rounded-lg p-3 ${q.is_resolved ? 'bg-green-50' : 'bg-gray-50'}`}>
                 <div className="flex items-start justify-between gap-2 mb-1">
-                  <span className="text-xs font-medium text-blue-600">@{q.username}</span>
+                  <span className="text-xs font-medium text-blue-600">@{q.display_name}</span>
                   {q.is_resolved && <span className="text-xs text-green-600 font-medium">✓ 해결됨</span>}
                 </div>
                 <p className="text-sm text-gray-800 whitespace-pre-wrap">{q.body}</p>
@@ -81,7 +85,7 @@ export function QAPanel({ fileId }: Props) {
 
                 {q.answers.map(a => (
                   <div key={a.id} className="mt-2 ml-3 pl-3 border-l-2 border-blue-200">
-                    <span className="text-xs font-medium text-gray-600">@{a.answerer_username}</span>
+                    <span className="text-xs font-medium text-gray-600">@{a.answerer_display_name}</span>
                     <p className="text-sm text-gray-700 whitespace-pre-wrap">{a.body}</p>
                     <p className="text-xs text-gray-400">{new Date(a.created_at).toLocaleString('ko-KR')}</p>
                   </div>
@@ -131,7 +135,7 @@ export function QAPanel({ fileId }: Props) {
             <MentionInput
               value={newQuestion}
               onChange={setNewQuestion}
-              placeholder="질의를 입력하세요... (@username으로 멘션)"
+              placeholder="질의를 입력하세요... (@사용자명으로 멘션)"
             />
             <Button
               size="sm"

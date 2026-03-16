@@ -9,8 +9,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   const navLinks = [
     { to: '/documents', label: '문서' },
-    { to: '/faq', label: 'FAQ' },
-    ...(isAdmin ? [{ to: '/admin', label: '관리자' }] : []),
+    ...(isAdmin ? [
+      { to: '/faq', label: 'FAQ' },
+      { to: '/admin', label: '관리자' },
+    ] : []),
   ];
 
   const handleLogout = () => {

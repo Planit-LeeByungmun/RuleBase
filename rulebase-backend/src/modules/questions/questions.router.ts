@@ -6,6 +6,7 @@ const router = Router();
 router.use(authenticate);
 
 router.get('/', controller.getQuestions);
+router.get('/unresolved-counts', controller.getUnresolvedCounts);
 router.post('/', controller.createQuestion);
 router.post('/:id/answers', controller.createAnswer);
 router.patch('/:id/resolve', controller.resolveQuestion);

@@ -34,8 +34,13 @@ export const upload = multer({
       'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
       'application/vnd.ms-powerpoint',
       'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+      'application/x-hwp',
+      'application/haansofthwp',
+      'application/vnd.hancom.hwp',
     ];
-    if (allowed.includes(file.mimetype)) {
+    // HWP files are often sent as application/octet-stream by browsers
+    const ext = path.extname(file.originalname).toLowerCase();
+    if (allowed.includes(file.mimetype) || ext === '.hwp') {
       cb(null, true);
     } else {
       cb(new AppError('File type not allowed', 400));

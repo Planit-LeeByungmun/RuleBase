@@ -1,14 +1,48 @@
 
 
+import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { useFolderTree } from '../../../hooks/useFolderTree';
 import { useFolderStore } from '../../../store/folderStore';
+import { filesApi } from '../../../api/files';
 import { FolderTreeNode } from './FolderTreeNode';
+import type { FileItem, Folder } from '../../../types';
 
 export function FolderSidebar() {
   const { data: folders, isLoading, allFolderIds } = useFolderTree();
   const { expandAll, collapseAll } = useFolderStore();
   const navigate = useNavigate();
+
+  const { data: allFiles } = useQuery({
+    queryKey: ['files', 'all'],
+    queryFn: async () => {
+      const res = await filesApi.getAll();
+      return res.data.data as FileItem[];
+    },
+  });
+
+  const fileCountMap = useMemo(() => {
+    // Direct file count per folder
+    const directMap = new Map<number, number>();
+    allFiles?.forEach(f => {
+      directMap.set(f.folder_id, (directMap.get(f.folder_id) || 0) + 1);
+    });
+
+    // Recursively sum children counts
+    const totalMap = new Map<number, number>();
+    function sumFolder(folder: Folder): number {
+      let count = directMap.get(folder.id) || 0;
+      folder.children?.forEach(child => {
+        count += sumFolder(child);
+      });
+      totalMap.set(folder.id, count);
+      return count;
+    }
+    folders?.forEach(f => sumFolder(f));
+
+    return totalMap;
+  }, [allFiles, folders]);
 
   if (isLoading) {
     return <div className="w-64 min-w-64 bg-white border-r border-gray-200 p-4 text-sm text-gray-400">폴더 로딩 중...</div>;
@@ -37,7 +71,7 @@ export function FolderSidebar() {
           <p className="text-sm text-gray-400 text-center py-8">폴더가 없습니다</p>
         )}
         {folders?.map(folder => (
-          <FolderTreeNode key={folder.id} folder={folder} />
+          <FolderTreeNode key={folder.id} folder={folder} fileCountMap={fileCountMap} />
         ))}
       </div>
     </div>

@@ -77,8 +77,8 @@ export function MentionInput({ value, onChange, placeholder }: Props) {
               onClick={() => selectSuggestion(user)}
               className="w-full text-left px-3 py-2 hover:bg-blue-50 text-sm"
             >
-              <span className="font-medium">@{user.username}</span>
-              <span className="text-gray-400 ml-2">{user.display_name}</span>
+              <span className="font-medium">@{user.display_name}</span>
+              <span className="text-gray-400 ml-2">{user.username}</span>
             </button>
           ))}
         </div>
