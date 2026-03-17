@@ -145,38 +145,65 @@ export async function previewFile(req: Request, res: Response, next: NextFunctio
     const previewDir = path.join(__dirname, '../../../storage/previews');
     const baseName = path.parse(file.stored_name).name;
 
-    // HWP → convert to HTML via hwp5html
+    // HWP → convert to PDF via hwp5html (HWP→HTML) then LibreOffice (HTML→PDF)
     if (HWP_MIME_TYPES.includes(file.mime_type) || fileExt === '.hwp') {
-      const htmlDir = path.join(previewDir, baseName);
-      const htmlPath = path.join(htmlDir, 'index.xhtml');
+      const pdfPath = path.join(previewDir, `${baseName}.pdf`);
 
-      if (!fs.existsSync(htmlPath)) {
+      if (!fs.existsSync(pdfPath)) {
+        // Step 1: HWP → HTML via hwp5html
+        const htmlDir = path.join(previewDir, baseName);
+        const htmlPath = path.join(htmlDir, 'index.xhtml');
+
+        if (!fs.existsSync(htmlPath)) {
+          await new Promise<void>((resolve, reject) => {
+            execFile(
+              '/Users/bmlee/Library/Python/3.9/bin/hwp5html',
+              ['--output', htmlDir, filePath],
+              { timeout: 30000 },
+              (error) => {
+                if (error) reject(new AppError('HWP 변환에 실패했습니다.', 500));
+                else resolve();
+              },
+            );
+          });
+        }
+
+        if (!fs.existsSync(htmlPath)) {
+          throw new AppError('변환된 HTML 파일을 찾을 수 없습니다.', 500);
+        }
+
+        // Step 2: HTML → PDF via LibreOffice
+        const libreofficeCmd = getLibreOfficeCmd();
+        if (!libreofficeCmd) {
+          throw new AppError('LibreOffice가 설치되어 있지 않습니다.', 500);
+        }
+
         await new Promise<void>((resolve, reject) => {
           execFile(
-            '/Users/bmlee/Library/Python/3.9/bin/hwp5html',
-            ['--output', htmlDir, filePath],
+            libreofficeCmd,
+            ['--headless', '--norestore', '--convert-to', 'pdf', '--outdir', previewDir, htmlPath],
             { timeout: 30000 },
             (error) => {
-              if (error) reject(new AppError('HWP 변환에 실패했습니다.', 500));
+              if (error) reject(new AppError('HWP PDF 변환에 실패했습니다.', 500));
               else resolve();
             },
           );
         });
+
+        // LibreOffice outputs as "index.pdf", rename to match baseName
+        const tempPdf = path.join(previewDir, 'index.pdf');
+        if (fs.existsSync(tempPdf)) {
+          fs.renameSync(tempPdf, pdfPath);
+        }
+
+        if (!fs.existsSync(pdfPath)) {
+          throw new AppError('변환된 PDF 파일을 찾을 수 없습니다.', 500);
+        }
       }
 
-      if (!fs.existsSync(htmlPath)) {
-        throw new AppError('변환된 HTML 파일을 찾을 수 없습니다.', 500);
-      }
-
-      // Rewrite relative resource paths to preview-assets endpoint
-      let html = fs.readFileSync(htmlPath, 'utf8');
-      const assetsBase = `/api/v1/files/${fileId}/preview-assets`;
-      html = html.replace(/href="styles\.css"/g, `href="${assetsBase}/styles.css"`);
-      html = html.replace(/src="bindata\//g, `src="${assetsBase}/bindata/`);
-      html = html.replace(/url\(bindata\//g, `url(${assetsBase}/bindata/`);
-
-      res.setHeader('Content-Type', 'text/html; charset=utf-8');
-      return res.send(html);
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', contentDisposition('inline', path.parse(file.original_name).name + '.pdf'));
+      return res.sendFile(pdfPath);
     }
 
     // Office → convert to PDF via LibreOffice

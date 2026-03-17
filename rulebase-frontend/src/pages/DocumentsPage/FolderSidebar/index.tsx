@@ -9,7 +9,7 @@ import { filesApi } from '../../../api/files';
 import { FolderTreeNode } from './FolderTreeNode';
 import type { FileItem, Folder } from '../../../types';
 
-export function FolderSidebar() {
+export function FolderSidebar({ noBorder }: { noBorder?: boolean } = {}) {
   const { data: folders, isLoading, allFolderIds } = useFolderTree();
   const { expandAll, collapseAll } = useFolderStore();
   const navigate = useNavigate();
@@ -45,11 +45,11 @@ export function FolderSidebar() {
   }, [allFiles, folders]);
 
   if (isLoading) {
-    return <div className="w-64 min-w-64 bg-white border-r border-gray-200 p-4 text-sm text-gray-400">폴더 로딩 중...</div>;
+    return <div className={`bg-white p-4 text-sm text-gray-400 ${noBorder ? 'w-full' : 'w-64 min-w-64 border-r border-gray-200'}`}>폴더 로딩 중...</div>;
   }
 
   return (
-    <div className="w-64 min-w-64 bg-white border-r border-gray-200 flex flex-col">
+    <div className={`bg-white flex flex-col ${noBorder ? 'w-full h-full' : 'w-64 min-w-64 border-r border-gray-200'}`}>
       <div className="p-3 border-b flex items-center justify-between">
         <div className="flex items-center gap-2">
           <h2 className="text-sm font-semibold text-gray-700">폴더</h2>

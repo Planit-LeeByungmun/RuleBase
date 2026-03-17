@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useFolderStore } from '../../../store/folderStore';
+import { useSearchStore } from '../../../store/searchStore';
 import { useQuery } from '@tanstack/react-query';
 import { filesApi } from '../../../api/files';
 import { useAuthStore } from '../../../store/authStore';
@@ -9,19 +10,19 @@ import type { FileItem } from '../../../types';
 import { QAPanel } from './QAPanel';
 import { PdfViewer, type PdfViewerHandle, type SearchMatch } from './PdfViewer';
 
-export function FileViewer() {
+export function FileViewer({ pdfViewerRef }: { pdfViewerRef: React.RefObject<PdfViewerHandle | null> }) {
   const { selectedFileId, setSelectedFile } = useFolderStore();
   const token = useAuthStore(s => s.token);
   const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000/api/v1';
-  const pdfViewerRef = useRef<PdfViewerHandle>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   const [showSearch, setShowSearch] = useState(false);
   const [searchKeyword, setSearchKeyword] = useState('');
-  const [searchResults, setSearchResults] = useState<SearchMatch[]>([]);
-  const [activeResultIdx, setActiveResultIdx] = useState(-1);
   const [searching, setSearching] = useState(false);
   const [searchedOnce, setSearchedOnce] = useState(false);
+  const searchStore = useSearchStore();
+  const searchResults = searchStore.results;
+  const activeResultIdx = searchStore.activeIdx;
 
   const { data: files } = useQuery({
     queryKey: ['files', 'all'],
@@ -36,7 +37,7 @@ export function FileViewer() {
   // Determine if current file uses PdfViewer
   const isPdfViewable = file && (
     file.mime_type === 'application/pdf' ||
-    ['doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx'].includes(
+    ['doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'hwp'].includes(
       file.original_name.split('.').pop()?.toLowerCase() || ''
     ) ||
     OFFICE_MIME_TYPES.includes(file.mime_type)
@@ -68,8 +69,7 @@ export function FileViewer() {
   const closeSearch = useCallback(() => {
     setShowSearch(false);
     setSearchKeyword('');
-    setSearchResults([]);
-    setActiveResultIdx(-1);
+    searchStore.clear();
     setSearching(false);
     setSearchedOnce(false);
     pdfViewerRef.current?.clearHighlight();
@@ -80,8 +80,7 @@ export function FileViewer() {
     setSearching(true);
     setSearchedOnce(true);
     const results = await pdfViewerRef.current.search(searchKeyword.trim());
-    setSearchResults(results);
-    setActiveResultIdx(results.length > 0 ? 0 : -1);
+    searchStore.setSearch(results, searchKeyword.trim());
     if (results.length > 0) {
       pdfViewerRef.current.goToMatch(results[0]);
     }
@@ -90,7 +89,7 @@ export function FileViewer() {
 
   const goToResult = useCallback((idx: number) => {
     if (idx < 0 || idx >= searchResults.length) return;
-    setActiveResultIdx(idx);
+    searchStore.setActiveIdx(idx);
     pdfViewerRef.current?.goToMatch(searchResults[idx]);
   }, [searchResults]);
 
@@ -201,119 +200,12 @@ export function FileViewer() {
         </div>
       </div>
 
-      {/* Right panel: Search results + Q&A */}
+      {/* Right panel: Q&A */}
       <div className="w-80 min-w-80 flex flex-col border-l border-gray-200">
-        {searchResults.length > 0 && (
-          <SearchResultsPanel
-            results={searchResults}
-            activeIdx={activeResultIdx}
-            keyword={searchKeyword}
-            onSelect={goToResult}
-            onClose={closeSearch}
-          />
-        )}
         <div className="flex-1 overflow-hidden">
           <QAPanel fileId={file.id} />
         </div>
       </div>
-    </div>
-  );
-}
-
-const RESULTS_PER_PAGE = 10;
-
-function SearchResultsPanel({
-  results,
-  activeIdx,
-  keyword,
-  onSelect,
-  onClose,
-}: {
-  results: SearchMatch[];
-  activeIdx: number;
-  keyword: string;
-  onSelect: (idx: number) => void;
-  onClose: () => void;
-}) {
-  const [page, setPage] = useState(0);
-  const totalPages = Math.ceil(results.length / RESULTS_PER_PAGE);
-  const pageStart = page * RESULTS_PER_PAGE;
-  const pageEnd = Math.min(pageStart + RESULTS_PER_PAGE, results.length);
-  const pageResults = results.slice(pageStart, pageEnd);
-
-  // Auto-switch page when activeIdx changes (e.g. via prev/next buttons)
-  useEffect(() => {
-    if (activeIdx >= 0) {
-      const targetPage = Math.floor(activeIdx / RESULTS_PER_PAGE);
-      if (targetPage !== page) setPage(targetPage);
-    }
-  }, [activeIdx]);
-
-  function highlightKeyword(text: string, kw: string) {
-    if (!kw) return text;
-    const regex = new RegExp(`(${kw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
-    const parts = text.split(regex);
-    return parts.map((part, i) =>
-      regex.test(part)
-        ? <mark key={i} className="bg-yellow-300 text-yellow-900 rounded px-0.5 font-semibold">{part}</mark>
-        : <span key={i}>{part}</span>
-    );
-  }
-
-  return (
-    <div className="border-b border-gray-200 bg-yellow-50 flex flex-col max-h-[50%] min-h-[120px]">
-      <div className="px-3 py-2 flex items-center justify-between border-b border-yellow-200 flex-shrink-0">
-        <div className="flex items-center gap-2">
-          <span className="text-xs font-semibold text-gray-700">검색 결과</span>
-          <span className="text-xs font-medium px-1.5 py-0.5 rounded-full bg-yellow-200 text-yellow-800">
-            {results.length}건
-          </span>
-        </div>
-        <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-sm">&times;</button>
-      </div>
-      <div className="flex-1 overflow-hidden">
-        {pageResults.map((match, i) => {
-          const globalIdx = pageStart + i;
-          return (
-            <div
-              key={`${match.page}-${match.index}`}
-              onClick={() => onSelect(globalIdx)}
-              className={`px-3 py-2 cursor-pointer border-b border-yellow-100 transition-colors text-xs ${
-                globalIdx === activeIdx ? 'bg-yellow-200 border-l-2 border-l-yellow-500' : 'hover:bg-yellow-100'
-              }`}
-            >
-              <div className="flex items-center gap-2 mb-1">
-                <span className="font-semibold text-blue-600">p.{match.page}</span>
-                <span className="text-gray-400">#{globalIdx + 1}</span>
-              </div>
-              <p className="text-gray-700 leading-relaxed break-words whitespace-pre-wrap line-clamp-2">
-                {highlightKeyword(match.lineText || match.context, keyword)}
-              </p>
-            </div>
-          );
-        })}
-      </div>
-      {totalPages > 1 && (
-        <div className="px-3 py-1.5 flex items-center justify-center gap-2 border-t border-yellow-200 flex-shrink-0">
-          <button
-            onClick={() => setPage(p => Math.max(0, p - 1))}
-            disabled={page === 0}
-            className="px-1.5 py-0.5 text-xs text-gray-600 hover:bg-yellow-200 rounded disabled:opacity-30 disabled:cursor-not-allowed"
-          >
-            ◀
-          </button>
-          <span className="text-xs text-gray-600">
-            {page + 1} / {totalPages}
-          </span>
-          <button
-            onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
-            disabled={page >= totalPages - 1}
-            className="px-1.5 py-0.5 text-xs text-gray-600 hover:bg-yellow-200 rounded disabled:opacity-30 disabled:cursor-not-allowed"
-          >
-            ▶
-          </button>
-        </div>
-      )}
     </div>
   );
 }
@@ -393,13 +285,10 @@ function FileRenderer({
   }
 
   const ext = file.original_name.split('.').pop()?.toLowerCase() || '';
-  const OFFICE_EXTENSIONS = ['doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx'];
+
+  const OFFICE_EXTENSIONS = ['doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'hwp'];
   if (OFFICE_MIME_TYPES.includes(file.mime_type) || OFFICE_EXTENSIONS.includes(ext)) {
     return <PdfViewer ref={pdfViewerRef} src={previewUrl} title={file.original_name} />;
-  }
-
-  if (ext === 'hwp') {
-    return <PreviewIframe src={previewUrl} title={file.original_name} />;
   }
 
   return (
