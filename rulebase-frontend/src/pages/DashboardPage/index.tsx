@@ -3,10 +3,11 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { dashboardApi } from '../../api/dashboard';
 import { inquiriesApi } from '../../api/inquiries';
+import { faqApi } from '../../api/faq';
 import { useAuthStore } from '../../store/authStore';
 import { useUiStore } from '../../store/uiStore';
 import { useFolderStore } from '../../store/folderStore';
-import type { Inquiry, InquiryDetail } from '../../types';
+import type { Inquiry, InquiryDetail, FaqCategory } from '../../types';
 
 interface DashboardStats {
   total_files: number;
@@ -750,22 +751,39 @@ function RecentFilesCard({ files, isLoading }: { files: RecentFile[]; isLoading:
   const needsScroll = recentFiles.length > VISIBLE_COUNT;
   const scrollRef = useRef<HTMLDivElement>(null);
   const pausedRef = useRef(false);
+  const [animDone, setAnimDone] = useState(false);
 
   useEffect(() => {
     if (!needsScroll || !scrollRef.current) return;
+    setAnimDone(false);
     const el = scrollRef.current;
     let animId: number;
     let start: number | null = null;
     const totalHeight = el.scrollHeight / 2;
     const speed = 30;
 
+    let elapsedTotal = 0;
+    let prevTimestamp: number | null = null;
+
     const step = (timestamp: number) => {
       if (pausedRef.current) {
         animId = requestAnimationFrame(step);
         start = null;
+        prevTimestamp = null;
         return;
       }
       if (start === null) start = timestamp;
+      if (prevTimestamp !== null) {
+        elapsedTotal += timestamp - prevTimestamp;
+      }
+      prevTimestamp = timestamp;
+
+      if (elapsedTotal >= 5000) {
+        el.scrollTop = 0;
+        setAnimDone(true);
+        return;
+      }
+
       const elapsed = (timestamp - start) / 1000;
       const pos = (elapsed * speed) % totalHeight;
       el.scrollTop = pos;
@@ -778,6 +796,7 @@ function RecentFilesCard({ files, isLoading }: { files: RecentFile[]; isLoading:
 
   const handleFileClick = useCallback((file: RecentFile) => {
     pausedRef.current = true;
+    setAnimDone(true);
     if (!expandedFolderIds.has(file.folder_id)) {
       toggleFolder(file.folder_id);
     }
@@ -825,20 +844,137 @@ function RecentFilesCard({ files, isLoading }: { files: RecentFile[]; isLoading:
         ) : !recentFiles.length ? (
           <div className="py-8 text-center text-gray-400 text-sm">최근 일주일 내 업로드된 파일이 없습니다</div>
         ) : needsScroll ? (
-          <div
-            ref={scrollRef}
-            className="overflow-hidden"
-            style={{ height: CONTAINER_HEIGHT }}
-          >
-            <div className="space-y-2">
-              {fileItems(recentFiles)}
+          animDone ? (
+            <div
+              className="overflow-y-auto space-y-2"
+              style={{ maxHeight: CONTAINER_HEIGHT }}
+            >
               {fileItems(recentFiles)}
             </div>
-          </div>
+          ) : (
+            <div
+              ref={scrollRef}
+              className="overflow-hidden"
+              style={{ height: CONTAINER_HEIGHT }}
+            >
+              <div className="space-y-2">
+                {fileItems(recentFiles)}
+                {fileItems(recentFiles)}
+              </div>
+            </div>
+          )
         ) : (
           <div className="space-y-2">
             {fileItems(recentFiles)}
           </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function FaqAccordionItem({ question, answer, index }: { question: string; answer: string; index: number }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className={`rounded-lg transition-all ${open ? 'bg-violet-50' : 'hover:bg-gray-50'}`}>
+      <button
+        onClick={() => setOpen(!open)}
+        className="w-full text-left px-4 py-3 flex items-center gap-3 transition-colors"
+      >
+        <span className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0 ${
+          open ? 'bg-violet-500 text-white' : 'bg-gray-100 text-gray-500'
+        }`}>
+          {index + 1}
+        </span>
+        <span className={`flex-1 text-sm font-medium ${open ? 'text-violet-700' : 'text-gray-800'}`}>{question}</span>
+        <span className={`text-xs flex-shrink-0 transition-transform ${open ? 'rotate-180 text-violet-500' : 'text-gray-300'}`}>
+          ▼
+        </span>
+      </button>
+      {open && (
+        <div className="px-4 pb-3 ml-9">
+          <div className="text-sm text-gray-600 whitespace-pre-wrap leading-relaxed bg-white rounded-lg p-3 border border-violet-100">
+            {answer}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function FaqSection({ isLoading, categorySummaries }: { isLoading: boolean; categorySummaries?: FaqCategorySummary[] }) {
+  const [expandedCategoryId, setExpandedCategoryId] = useState<number | null>(null);
+
+  const { data: categories } = useQuery({
+    queryKey: ['faq', 'categories'],
+    queryFn: async () => {
+      const res = await faqApi.getCategories();
+      return res.data.data as FaqCategory[];
+    },
+  });
+
+  const toggleCategory = (id: number) => {
+    setExpandedCategoryId(prev => (prev === id ? null : id));
+  };
+
+  return (
+    <div className="bg-white rounded-xl shadow-sm border border-gray-100">
+      <div className="px-5 py-4 flex items-center gap-2">
+        <span className="text-base">💡</span>
+        <h3 className="text-sm font-semibold text-gray-900">FAQ</h3>
+      </div>
+      <div className="px-5 pb-4 space-y-2">
+        {isLoading ? (
+          Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} className="h-12 bg-gray-100 rounded-lg animate-pulse" />
+          ))
+        ) : !categorySummaries?.length ? (
+          <div className="py-8 text-center text-gray-400 text-sm">FAQ가 없습니다</div>
+        ) : (
+          categorySummaries.map(cat => {
+            const isExpanded = expandedCategoryId === cat.id;
+            const fullCategory = categories?.find(c => c.id === cat.id);
+            return (
+              <div key={cat.id} className={`rounded-xl border transition-all ${isExpanded ? 'border-violet-200 shadow-sm' : 'border-gray-100'}`}>
+                <button
+                  onClick={() => toggleCategory(cat.id)}
+                  className={`w-full flex items-center gap-3 p-3 rounded-xl transition-colors ${
+                    isExpanded ? 'bg-violet-50' : 'hover:bg-gray-50'
+                  }`}
+                >
+                  <div className="w-9 h-9 rounded-lg bg-violet-50 flex items-center justify-center flex-shrink-0">
+                    <span className="text-violet-500 text-sm">📂</span>
+                  </div>
+                  <div className="flex-1 min-w-0 text-left">
+                    <p className={`text-sm font-medium ${isExpanded ? 'text-violet-700' : 'text-gray-900'}`}>{cat.name}</p>
+                  </div>
+                  <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-violet-50 text-violet-600 flex-shrink-0">
+                    {cat.item_count}개 항목
+                  </span>
+                  <span className={`text-xs text-gray-300 flex-shrink-0 transition-transform ${isExpanded ? 'rotate-180 text-violet-500' : ''}`}>
+                    ▼
+                  </span>
+                </button>
+                {isExpanded && (
+                  <div className="px-3 pb-3">
+                    {!fullCategory ? (
+                      <div className="py-4 text-center">
+                        <div className="h-8 bg-gray-100 rounded-lg animate-pulse" />
+                      </div>
+                    ) : fullCategory.items.length === 0 ? (
+                      <div className="py-4 text-center text-gray-400 text-xs">항목이 없습니다</div>
+                    ) : (
+                      <div className="space-y-0.5">
+                        {fullCategory.items.map((item, i) => (
+                          <FaqAccordionItem key={item.id} question={item.question} answer={item.answer} index={i} />
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })
         )}
       </div>
     </div>
@@ -897,35 +1033,7 @@ export function DashboardPanel() {
       <InquirySection />
 
       {/* FAQ */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100">
-        <div className="px-5 py-4 flex items-center gap-2">
-          <span className="text-base">💡</span>
-          <h3 className="text-sm font-semibold text-gray-900">FAQ</h3>
-        </div>
-        <div className="px-5 pb-4 space-y-2">
-          {isLoading ? (
-            Array.from({ length: 3 }).map((_, i) => (
-              <div key={i} className="h-12 bg-gray-100 rounded-lg animate-pulse" />
-            ))
-          ) : !data?.faqCategories.length ? (
-            <div className="py-8 text-center text-gray-400 text-sm">FAQ가 없습니다</div>
-          ) : (
-            data.faqCategories.map(cat => (
-              <div key={cat.id} className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
-                <div className="w-9 h-9 rounded-lg bg-violet-50 flex items-center justify-center flex-shrink-0">
-                  <span className="text-violet-500 text-sm">📂</span>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-900">{cat.name}</p>
-                </div>
-                <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-violet-50 text-violet-600 flex-shrink-0">
-                  {cat.item_count}개 항목
-                </span>
-              </div>
-            ))
-          )}
-        </div>
-      </div>
+      <FaqSection isLoading={isLoading} categorySummaries={data?.faqCategories} />
     </div>
   );
 }
