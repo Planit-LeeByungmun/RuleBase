@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>스케줄 관리 시스템</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Segoe UI', -apple-system, sans-serif; background: #f0f2f5; color: #1a1a2e; min-height: 100vh; }
+
+  /* Header */
+  .header { background: linear-gradient(135deg, #667eea, #764ba2); color: #fff; padding: 20px 32px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 8px rgba(0,0,0,.15); }
+  .header h1 { font-size: 22px; font-weight: 700; }
+  .header .today-btn { background: rgba(255,255,255,.2); border: 1px solid rgba(255,255,255,.4); color: #fff; padding: 8px 18px; border-radius: 8px; cursor: pointer; font-size: 14px; transition: background .2s; }
+  .header .today-btn:hover { background: rgba(255,255,255,.35); }
+
+  /* Layout */
+  .container { display: flex; gap: 24px; padding: 24px 32px; max-width: 1400px; margin: 0 auto; }
+  .left-panel { flex: 1; min-width: 0; }
+  .right-panel { width: 360px; flex-shrink: 0; }
+
+  /* Calendar Nav */
+  .cal-nav { display: flex; align-items: center; gap: 16px; margin-bottom: 16px; }
+  .cal-nav button { background: #fff; border: 1px solid #ddd; width: 36px; height: 36px; border-radius: 8px; cursor: pointer; font-size: 18px; display: flex; align-items: center; justify-content: center; transition: background .2s; }
+  .cal-nav button:hover { background: #667eea; color: #fff; border-color: #667eea; }
+  .cal-nav .month-label { font-size: 20px; font-weight: 700; min-width: 160px; text-align: center; }
+
+  /* Calendar */
+  .calendar { background: #fff; border-radius: 12px; box-shadow: 0 1px 4px rgba(0,0,0,.08); overflow: hidden; }
+  .cal-header { display: grid; grid-template-columns: repeat(7, 1fr); background: #f8f9fa; }
+  .cal-header div { padding: 12px 0; text-align: center; font-size: 13px; font-weight: 600; color: #666; }
+  .cal-header div:first-child { color: #e74c3c; }
+  .cal-header div:last-child { color: #3498db; }
+  .cal-body { display: grid; grid-template-columns: repeat(7, 1fr); }
+  .cal-cell { min-height: 100px; border: 1px solid #f0f0f0; padding: 6px; cursor: pointer; transition: background .15s; position: relative; }
+  .cal-cell:hover { background: #f8f9ff; }
+  .cal-cell.other-month { background: #fafafa; }
+  .cal-cell.other-month .day-num { color: #ccc; }
+  .cal-cell.today { background: #eef2ff; }
+  .cal-cell.selected { outline: 2px solid #667eea; outline-offset: -2px; }
+  .day-num { font-size: 13px; font-weight: 600; margin-bottom: 4px; }
+  .cal-cell:nth-child(7n+1) .day-num { color: #e74c3c; }
+  .cal-cell:nth-child(7n) .day-num { color: #3498db; }
+  .cal-event { font-size: 11px; padding: 2px 6px; border-radius: 4px; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #fff; cursor: pointer; }
+  .cal-event.priority-high { background: #e74c3c; }
+  .cal-event.priority-medium { background: #f39c12; }
+  .cal-event.priority-low { background: #27ae60; }
+  .cal-more { font-size: 11px; color: #667eea; cursor: pointer; font-weight: 600; }
+
+  /* Right Panel */
+  .panel-card { background: #fff; border-radius: 12px; box-shadow: 0 1px 4px rgba(0,0,0,.08); padding: 20px; margin-bottom: 16px; }
+  .panel-card h3 { font-size: 16px; font-weight: 700; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+  .selected-date { font-size: 14px; color: #667eea; font-weight: 600; margin-bottom: 12px; }
+
+  /* Form */
+  .form-group { margin-bottom: 12px; }
+  .form-group label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 4px; color: #555; }
+  .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 10px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; font-family: inherit; transition: border-color .2s; }
+  .form-group input:focus, .form-group select:focus, .form-group textarea:focus { outline: none; border-color: #667eea; box-shadow: 0 0 0 3px rgba(102,126,234,.1); }
+  .form-group textarea { resize: vertical; min-height: 60px; }
+  .form-row { display: flex; gap: 8px; }
+  .form-row .form-group { flex: 1; }
+  .btn { padding: 10px 20px; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all .2s; }
+  .btn-primary { background: #667eea; color: #fff; width: 100%; }
+  .btn-primary:hover { background: #5a6fd6; }
+  .btn-danger { background: #fee; color: #e74c3c; padding: 6px 12px; font-size: 12px; }
+  .btn-danger:hover { background: #e74c3c; color: #fff; }
+  .btn-edit { background: #eef2ff; color: #667eea; padding: 6px 12px; font-size: 12px; }
+  .btn-edit:hover { background: #667eea; color: #fff; }
+  .btn-cancel { background: #f0f0f0; color: #666; width: 100%; }
+  .btn-cancel:hover { background: #e0e0e0; }
+
+  /* Schedule List */
+  .schedule-list { list-style: none; }
+  .schedule-item { display: flex; align-items: flex-start; gap: 10px; padding: 12px; border-radius: 8px; margin-bottom: 8px; background: #f8f9fa; transition: background .15s; }
+  .schedule-item:hover { background: #eef2ff; }
+  .schedule-dot { width: 10px; height: 10px; border-radius: 50%; margin-top: 5px; flex-shrink: 0; }
+  .schedule-dot.high { background: #e74c3c; }
+  .schedule-dot.medium { background: #f39c12; }
+  .schedule-dot.low { background: #27ae60; }
+  .schedule-info { flex: 1; min-width: 0; }
+  .schedule-title { font-size: 14px; font-weight: 600; margin-bottom: 2px; }
+  .schedule-title.done { text-decoration: line-through; color: #aaa; }
+  .schedule-time { font-size: 12px; color: #888; }
+  .schedule-desc { font-size: 12px; color: #888; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .schedule-actions { display: flex; gap: 4px; flex-shrink: 0; }
+  .schedule-check { width: 20px; height: 20px; border-radius: 50%; border: 2px solid #ccc; cursor: pointer; display: flex; align-items: center; justify-content: center; background: #fff; flex-shrink: 0; margin-top: 3px; transition: all .2s; font-size: 12px; }
+  .schedule-check.checked { background: #27ae60; border-color: #27ae60; color: #fff; }
+  .empty-msg { text-align: center; color: #aaa; padding: 20px; font-size: 14px; }
+
+  /* Stats */
+  .stats { display: flex; gap: 8px; margin-bottom: 16px; }
+  .stat-item { flex: 1; text-align: center; padding: 12px 8px; background: #f8f9fa; border-radius: 8px; }
+  .stat-num { font-size: 20px; font-weight: 700; }
+  .stat-num.total { color: #667eea; }
+  .stat-num.done { color: #27ae60; }
+  .stat-num.pending { color: #f39c12; }
+  .stat-label { font-size: 11px; color: #888; margin-top: 2px; }
+
+  /* Search */
+  .search-box { position: relative; margin-bottom: 12px; }
+  .search-box input { width: 100%; padding: 10px 12px 10px 36px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; }
+  .search-box input:focus { outline: none; border-color: #667eea; }
+  .search-box::before { content: '\1F50D'; position: absolute; left: 10px; top: 50%; transform: translateY(-50%); font-size: 14px; }
+
+  /* Modal */
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.4); z-index: 100; align-items: center; justify-content: center; }
+  .modal-overlay.active { display: flex; }
+  .modal { background: #fff; border-radius: 16px; padding: 28px; width: 420px; max-width: 90vw; max-height: 90vh; overflow-y: auto; box-shadow: 0 8px 32px rgba(0,0,0,.2); }
+  .modal h3 { font-size: 18px; margin-bottom: 20px; }
+  .modal .btn-row { display: flex; gap: 8px; margin-top: 16px; }
+  .modal .btn-row .btn { flex: 1; }
+
+  @media (max-width: 900px) {
+    .container { flex-direction: column; padding: 16px; }
+    .right-panel { width: 100%; }
+    .cal-cell { min-height: 70px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>&#128197; 스케줄 관리 시스템</h1>
+  <button class="today-btn" onclick="goToday()">오늘</button>
+</div>
+
+<div class="container">
+  <div class="left-panel">
+    <div class="cal-nav">
+      <button onclick="changeMonth(-1)">&#9664;</button>
+      <div class="month-label" id="monthLabel"></div>
+      <button onclick="changeMonth(1)">&#9654;</button>
+    </div>
+    <div class="calendar">
+      <div class="cal-header">
+        <div>일</div><div>월</div><div>화</div><div>수</div><div>목</div><div>금</div><div>토</div>
+      </div>
+      <div class="cal-body" id="calBody"></div>
+    </div>
+  </div>
+
+  <div class="right-panel">
+    <div class="panel-card">
+      <div class="stats">
+        <div class="stat-item"><div class="stat-num total" id="statTotal">0</div><div class="stat-label">전체</div></div>
+        <div class="stat-item"><div class="stat-num done" id="statDone">0</div><div class="stat-label">완료</div></div>
+        <div class="stat-item"><div class="stat-num pending" id="statPending">0</div><div class="stat-label">미완료</div></div>
+      </div>
+    </div>
+
+    <div class="panel-card">
+      <h3>&#10133; 새 스케줄</h3>
+      <div class="selected-date" id="selectedDateLabel"></div>
+      <div class="form-group">
+        <label>제목</label>
+        <input type="text" id="inputTitle" placeholder="스케줄 제목">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>시작 시간</label>
+          <input type="time" id="inputStart">
+        </div>
+        <div class="form-group">
+          <label>종료 시간</label>
+          <input type="time" id="inputEnd">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>우선순위</label>
+        <select id="inputPriority">
+          <option value="low">낮음</option>
+          <option value="medium" selected>보통</option>
+          <option value="high">높음</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>메모</label>
+        <textarea id="inputDesc" placeholder="메모 (선택사항)"></textarea>
+      </div>
+      <button class="btn btn-primary" onclick="addSchedule()">추가</button>
+    </div>
+
+    <div class="panel-card">
+      <h3>&#128203; 스케줄 목록</h3>
+      <div class="search-box">
+        <input type="text" id="searchInput" placeholder="검색..." oninput="renderDaySchedules()">
+      </div>
+      <ul class="schedule-list" id="scheduleList"></ul>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Modal -->
+<div class="modal-overlay" id="editModal">
+  <div class="modal">
+    <h3>&#9999;&#65039; 스케줄 수정</h3>
+    <input type="hidden" id="editId">
+    <div class="form-group">
+      <label>제목</label>
+      <input type="text" id="editTitle">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>시작 시간</label>
+        <input type="time" id="editStart">
+      </div>
+      <div class="form-group">
+        <label>종료 시간</label>
+        <input type="time" id="editEnd">
+      </div>
+    </div>
+    <div class="form-group">
+      <label>날짜</label>
+      <input type="date" id="editDate">
+    </div>
+    <div class="form-group">
+      <label>우선순위</label>
+      <select id="editPriority">
+        <option value="low">낮음</option>
+        <option value="medium">보통</option>
+        <option value="high">높음</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>메모</label>
+      <textarea id="editDesc"></textarea>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-cancel" onclick="closeModal()">취소</button>
+      <button class="btn btn-primary" onclick="saveEdit()">저장</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  let currentYear, currentMonth, selectedDate;
+  let schedules = JSON.parse(localStorage.getItem('schedules') || '[]');
+
+  function save() {
+    localStorage.setItem('schedules', JSON.stringify(schedules));
+  }
+
+  function dateKey(d) {
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  }
+
+  function getSchedulesForDate(key) {
+    return schedules.filter(s => s.date === key).sort((a,b) => (a.start||'').localeCompare(b.start||''));
+  }
+
+  function init() {
+    const now = new Date();
+    currentYear = now.getFullYear();
+    currentMonth = now.getMonth();
+    selectedDate = dateKey(now);
+    renderCalendar();
+    renderDaySchedules();
+  }
+
+  function goToday() {
+    const now = new Date();
+    currentYear = now.getFullYear();
+    currentMonth = now.getMonth();
+    selectedDate = dateKey(now);
+    renderCalendar();
+    renderDaySchedules();
+  }
+
+  function changeMonth(delta) {
+    currentMonth += delta;
+    if (currentMonth < 0) { currentMonth = 11; currentYear--; }
+    if (currentMonth > 11) { currentMonth = 0; currentYear++; }
+    renderCalendar();
+  }
+
+  function renderCalendar() {
+    const label = document.getElementById('monthLabel');
+    label.textContent = `${currentYear}년 ${currentMonth + 1}월`;
+
+    const body = document.getElementById('calBody');
+    body.innerHTML = '';
+
+    const firstDay = new Date(currentYear, currentMonth, 1).getDay();
+    const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+    const prevDays = new Date(currentYear, currentMonth, 0).getDate();
+    const todayKey = dateKey(new Date());
+
+    const totalCells = Math.ceil((firstDay + daysInMonth) / 7) * 7;
+
+    for (let i = 0; i < totalCells; i++) {
+      const cell = document.createElement('div');
+      cell.className = 'cal-cell';
+      let day, key;
+
+      if (i < firstDay) {
+        day = prevDays - firstDay + i + 1;
+        const m = currentMonth === 0 ? 12 : currentMonth;
+        const y = currentMonth === 0 ? currentYear - 1 : currentYear;
+        key = `${y}-${String(m).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+        cell.classList.add('other-month');
+      } else if (i >= firstDay + daysInMonth) {
+        day = i - firstDay - daysInMonth + 1;
+        const m = currentMonth + 2 > 12 ? 1 : currentMonth + 2;
+        const y = currentMonth + 2 > 12 ? currentYear + 1 : currentYear;
+        key = `${y}-${String(m).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+        cell.classList.add('other-month');
+      } else {
+        day = i - firstDay + 1;
+        key = `${currentYear}-${String(currentMonth+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+      }
+
+      if (key === todayKey) cell.classList.add('today');
+      if (key === selectedDate) cell.classList.add('selected');
+
+      cell.innerHTML = `<div class="day-num">${day}</div>`;
+
+      const events = getSchedulesForDate(key);
+      const maxShow = 2;
+      events.slice(0, maxShow).forEach(ev => {
+        const tag = document.createElement('div');
+        tag.className = `cal-event priority-${ev.priority}`;
+        tag.textContent = ev.title;
+        cell.appendChild(tag);
+      });
+      if (events.length > maxShow) {
+        const more = document.createElement('div');
+        more.className = 'cal-more';
+        more.textContent = `+${events.length - maxShow}개 더`;
+        cell.appendChild(more);
+      }
+
+      cell.onclick = () => { selectedDate = key; renderCalendar(); renderDaySchedules(); };
+      body.appendChild(cell);
+    }
+
+    updateStats();
+  }
+
+  function renderDaySchedules() {
+    const list = document.getElementById('scheduleList');
+    const label = document.getElementById('selectedDateLabel');
+    const search = document.getElementById('searchInput').value.toLowerCase();
+    const parts = selectedDate.split('-');
+    label.textContent = `${parts[0]}년 ${parseInt(parts[1])}월 ${parseInt(parts[2])}일`;
+
+    let events = getSchedulesForDate(selectedDate);
+    if (search) events = events.filter(e => e.title.toLowerCase().includes(search) || (e.desc||'').toLowerCase().includes(search));
+
+    if (!events.length) {
+      list.innerHTML = '<div class="empty-msg">스케줄이 없습니다</div>';
+      return;
+    }
+
+    const priorityLabel = { high: '높음', medium: '보통', low: '낮음' };
+    list.innerHTML = events.map(ev => `
+      <li class="schedule-item">
+        <div class="schedule-check ${ev.done ? 'checked' : ''}" onclick="toggleDone('${ev.id}')">
+          ${ev.done ? '&#10003;' : ''}
+        </div>
+        <div class="schedule-info">
+          <div class="schedule-title ${ev.done ? 'done' : ''}">${esc(ev.title)}</div>
+          <div class="schedule-time">${ev.start || ''}${ev.start && ev.end ? ' ~ ' : ''}${ev.end || ''} &middot; ${priorityLabel[ev.priority]}</div>
+          ${ev.desc ? `<div class="schedule-desc">${esc(ev.desc)}</div>` : ''}
+        </div>
+        <div class="schedule-actions">
+          <button class="btn btn-edit" onclick="openEdit('${ev.id}')">수정</button>
+          <button class="btn btn-danger" onclick="deleteSchedule('${ev.id}')">삭제</button>
+        </div>
+      </li>
+    `).join('');
+  }
+
+  function esc(str) {
+    const d = document.createElement('div');
+    d.textContent = str;
+    return d.innerHTML;
+  }
+
+  function addSchedule() {
+    const title = document.getElementById('inputTitle').value.trim();
+    if (!title) { alert('제목을 입력해 주세요.'); return; }
+
+    schedules.push({
+      id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+      date: selectedDate,
+      title,
+      start: document.getElementById('inputStart').value,
+      end: document.getElementById('inputEnd').value,
+      priority: document.getElementById('inputPriority').value,
+      desc: document.getElementById('inputDesc').value.trim(),
+      done: false,
+    });
+    save();
+
+    document.getElementById('inputTitle').value = '';
+    document.getElementById('inputStart').value = '';
+    document.getElementById('inputEnd').value = '';
+    document.getElementById('inputPriority').value = 'medium';
+    document.getElementById('inputDesc').value = '';
+
+    renderCalendar();
+    renderDaySchedules();
+  }
+
+  function deleteSchedule(id) {
+    if (!confirm('삭제하시겠습니까?')) return;
+    schedules = schedules.filter(s => s.id !== id);
+    save();
+    renderCalendar();
+    renderDaySchedules();
+  }
+
+  function toggleDone(id) {
+    const s = schedules.find(s => s.id === id);
+    if (s) { s.done = !s.done; save(); renderCalendar(); renderDaySchedules(); }
+  }
+
+  function openEdit(id) {
+    const s = schedules.find(s => s.id === id);
+    if (!s) return;
+    document.getElementById('editId').value = id;
+    document.getElementById('editTitle').value = s.title;
+    document.getElementById('editStart').value = s.start || '';
+    document.getElementById('editEnd').value = s.end || '';
+    document.getElementById('editDate').value = s.date;
+    document.getElementById('editPriority').value = s.priority;
+    document.getElementById('editDesc').value = s.desc || '';
+    document.getElementById('editModal').classList.add('active');
+  }
+
+  function closeModal() {
+    document.getElementById('editModal').classList.remove('active');
+  }
+
+  function saveEdit() {
+    const id = document.getElementById('editId').value;
+    const s = schedules.find(s => s.id === id);
+    if (!s) return;
+    const title = document.getElementById('editTitle').value.trim();
+    if (!title) { alert('제목을 입력해 주세요.'); return; }
+    s.title = title;
+    s.start = document.getElementById('editStart').value;
+    s.end = document.getElementById('editEnd').value;
+    s.date = document.getElementById('editDate').value;
+    s.priority = document.getElementById('editPriority').value;
+    s.desc = document.getElementById('editDesc').value.trim();
+    save();
+    closeModal();
+    renderCalendar();
+    renderDaySchedules();
+  }
+
+  function updateStats() {
+    const total = schedules.length;
+    const done = schedules.filter(s => s.done).length;
+    document.getElementById('statTotal').textContent = total;
+    document.getElementById('statDone').textContent = done;
+    document.getElementById('statPending').textContent = total - done;
+  }
+
+  document.getElementById('editModal').addEventListener('click', e => {
+    if (e.target === e.currentTarget) closeModal();
+  });
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') closeModal();
+  });
+
+  init();
+</script>
+</body>
+</html>
