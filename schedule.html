@@ -42,10 +42,23 @@
   .cal-cell:nth-child(7n+1) .day-num { color: #e74c3c; }
   .cal-cell:nth-child(7n) .day-num { color: #3498db; }
   .cal-event { font-size: 11px; padding: 2px 6px; border-radius: 4px; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #fff; cursor: pointer; }
-  .cal-event.priority-high { background: #e74c3c; }
-  .cal-event.priority-medium { background: #f39c12; }
-  .cal-event.priority-low { background: #27ae60; }
-  .cal-more { font-size: 11px; color: #667eea; cursor: pointer; font-weight: 600; }
+  .cal-event.ev-color-0 { background: #667eea; }
+  .cal-event.ev-color-1 { background: #e74c3c; }
+  .cal-event.ev-color-2 { background: #27ae60; }
+  .cal-event.ev-color-3 { background: #f39c12; }
+  .cal-event.ev-color-4 { background: #9b59b6; }
+  .cal-event.ev-color-5 { background: #e67e22; }
+  .cal-event.ev-color-6 { background: #1abc9c; }
+  .cal-event.ev-color-7 { background: #e84393; }
+  /* Event Tooltip */
+  .cal-event-wrap { position: relative; }
+  .cal-event-wrap:hover .cal-tooltip { display: block; }
+  .cal-tooltip { display: none; position: absolute; bottom: calc(100% + 6px); left: 50%; transform: translateX(-50%); background: #2d2d3f; color: #fff; padding: 10px 14px; border-radius: 8px; font-size: 12px; line-height: 1.5; white-space: nowrap; z-index: 100; box-shadow: 0 4px 12px rgba(0,0,0,.25); pointer-events: none; }
+  .cal-tooltip::after { content: ''; position: absolute; top: 100%; left: 50%; transform: translateX(-50%); border: 5px solid transparent; border-top-color: #2d2d3f; }
+  .cal-tooltip .tt-title { font-weight: 700; font-size: 13px; margin-bottom: 4px; }
+  .cal-tooltip .tt-time { color: #a8b0ff; }
+  .cal-tooltip .tt-priority { color: #ffd36e; }
+  .cal-tooltip .tt-memo { color: #ccc; max-width: 200px; white-space: normal; margin-top: 2px; }
 
   /* Right Panel */
   .panel-card { background: #fff; border-radius: 12px; box-shadow: 0 1px 4px rgba(0,0,0,.08); padding: 20px; margin-bottom: 16px; }
@@ -58,29 +71,49 @@
   .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 10px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; font-family: inherit; transition: border-color .2s; }
   .form-group input:focus, .form-group select:focus, .form-group textarea:focus { outline: none; border-color: #667eea; box-shadow: 0 0 0 3px rgba(102,126,234,.1); }
 
-  /* Custom Time Picker */
-  .time-picker { position: relative; }
-  .time-picker-input { width: 100%; padding: 10px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; cursor: pointer; background: #fff; display: flex; align-items: center; justify-content: space-between; user-select: none; transition: border-color .2s; }
-  .time-picker-input:hover { border-color: #aaa; }
-  .time-picker-input.active { border-color: #667eea; box-shadow: 0 0 0 3px rgba(102,126,234,.1); }
-  .time-picker-input .placeholder { color: #999; }
-  .time-picker-dropdown { display: none; position: absolute; top: calc(100% + 4px); left: 0; right: 0; background: #fff; border: 1px solid #ddd; border-radius: 10px; box-shadow: 0 6px 20px rgba(0,0,0,.12); z-index: 50; padding: 12px; }
-  .time-picker-dropdown.open { display: block; }
-  .time-picker-cols { display: flex; gap: 8px; }
-  .time-picker-col { flex: 1; text-align: center; }
-  .time-picker-col-label { font-size: 11px; font-weight: 600; color: #888; margin-bottom: 6px; }
-  .time-picker-scroll { max-height: 180px; overflow-y: auto; border: 1px solid #eee; border-radius: 6px; }
-  .time-picker-scroll::-webkit-scrollbar { width: 4px; }
-  .time-picker-scroll::-webkit-scrollbar-thumb { background: #ccc; border-radius: 2px; }
-  .time-option { padding: 6px 0; font-size: 14px; cursor: pointer; border-radius: 4px; transition: background .1s; }
-  .time-option:hover { background: #f0f2ff; }
-  .time-option.selected { background: #667eea; color: #fff; font-weight: 600; }
-  .time-picker-actions { display: flex; gap: 6px; margin-top: 10px; }
-  .time-picker-actions button { flex: 1; padding: 7px 0; border: none; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; }
-  .time-picker-actions .tp-clear { background: #f0f0f0; color: #666; }
-  .time-picker-actions .tp-clear:hover { background: #e0e0e0; }
-  .time-picker-actions .tp-confirm { background: #667eea; color: #fff; }
-  .time-picker-actions .tp-confirm:hover { background: #5a6fd6; }
+  /* Time Row - Korean Calendar Style */
+  .time-row { background: #f8f9fa; border-radius: 10px; padding: 14px 16px; margin-bottom: 12px; overflow: visible; position: relative; }
+  .time-row-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+  .time-row-header .clock-label { display: flex; align-items: center; gap: 6px; font-size: 14px; font-weight: 600; color: #333; }
+  .time-row-header .clock-label svg { width: 18px; height: 18px; color: #667eea; }
+  /* Toggle Switch */
+  .toggle-switch { position: relative; width: 44px; height: 24px; cursor: pointer; }
+  .toggle-switch input { display: none; }
+  .toggle-track { width: 44px; height: 24px; background: #ccc; border-radius: 12px; transition: background .2s; }
+  .toggle-switch input:checked + .toggle-track { background: #667eea; }
+  .toggle-knob { position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; background: #fff; border-radius: 50%; transition: transform .2s; box-shadow: 0 1px 3px rgba(0,0,0,.2); }
+  .toggle-switch input:checked ~ .toggle-knob { transform: translateX(20px); }
+  /* Date Row */
+  .time-date-row { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px solid #e8e8e8; }
+  .time-date-row svg { width: 16px; height: 16px; color: #888; flex-shrink: 0; }
+  .time-date-display { font-size: 15px; font-weight: 500; color: #333; }
+  /* Time selectors inline */
+  .time-inline { display: flex; align-items: center; gap: 10px; overflow: visible; }
+  .time-inline .time-sep { font-size: 13px; color: #888; font-weight: 600; }
+  .time-trigger { position: relative; }
+  .time-trigger-btn { display: flex; align-items: center; gap: 5px; padding: 6px 12px; background: #fff; border: 1px solid #ddd; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 500; color: #333; transition: all .2s; user-select: none; white-space: nowrap; }
+  .time-trigger-btn:hover { border-color: #667eea; }
+  .time-trigger-btn.active { border-color: #667eea; box-shadow: 0 0 0 2px rgba(102,126,234,.15); }
+  .time-trigger-btn .arrow { font-size: 10px; color: #667eea; margin-left: 2px; }
+  .time-trigger-btn.disabled { opacity: .4; pointer-events: none; }
+  /* Dropdown */
+  .tp-dropdown { display: none; position: absolute; top: calc(100% + 4px); left: 0; background: #fff; border: 1px solid #ddd; border-radius: 10px; box-shadow: 0 6px 20px rgba(0,0,0,.12); z-index: 999; padding: 10px; width: 210px; }
+  .tp-dropdown.open { display: block; }
+  .tp-cols { display: flex; gap: 6px; }
+  .tp-col { flex: 1; text-align: center; }
+  .tp-col-label { font-size: 11px; font-weight: 600; color: #888; margin-bottom: 4px; }
+  .tp-scroll { max-height: 160px; overflow-y: auto; border: 1px solid #eee; border-radius: 6px; }
+  .tp-scroll::-webkit-scrollbar { width: 4px; }
+  .tp-scroll::-webkit-scrollbar-thumb { background: #ccc; border-radius: 2px; }
+  .tp-opt { padding: 5px 0; font-size: 13px; cursor: pointer; border-radius: 4px; transition: background .1s; }
+  .tp-opt:hover { background: #f0f2ff; }
+  .tp-opt.selected { background: #667eea; color: #fff; font-weight: 600; }
+  .tp-actions { display: flex; gap: 6px; margin-top: 8px; }
+  .tp-actions button { flex: 1; padding: 6px 0; border: none; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; }
+  .tp-actions .tp-clear { background: #f0f0f0; color: #666; }
+  .tp-actions .tp-clear:hover { background: #e0e0e0; }
+  .tp-actions .tp-ok { background: #667eea; color: #fff; }
+  .tp-actions .tp-ok:hover { background: #5a6fd6; }
   .form-group textarea { resize: vertical; min-height: 60px; }
   .form-row { display: flex; gap: 8px; }
   .form-row .form-group { flex: 1; }
@@ -99,9 +132,14 @@
   .schedule-item { display: flex; align-items: flex-start; gap: 10px; padding: 12px; border-radius: 8px; margin-bottom: 8px; background: #f8f9fa; transition: background .15s; }
   .schedule-item:hover { background: #eef2ff; }
   .schedule-dot { width: 10px; height: 10px; border-radius: 50%; margin-top: 5px; flex-shrink: 0; }
-  .schedule-dot.high { background: #e74c3c; }
-  .schedule-dot.medium { background: #f39c12; }
-  .schedule-dot.low { background: #27ae60; }
+  .schedule-dot.dot-color-0 { background: #667eea; }
+  .schedule-dot.dot-color-1 { background: #e74c3c; }
+  .schedule-dot.dot-color-2 { background: #27ae60; }
+  .schedule-dot.dot-color-3 { background: #f39c12; }
+  .schedule-dot.dot-color-4 { background: #9b59b6; }
+  .schedule-dot.dot-color-5 { background: #e67e22; }
+  .schedule-dot.dot-color-6 { background: #1abc9c; }
+  .schedule-dot.dot-color-7 { background: #e84393; }
   .schedule-info { flex: 1; min-width: 0; }
   .schedule-title { font-size: 14px; font-weight: 600; margin-bottom: 2px; }
   .schedule-title.done { text-decoration: line-through; color: #aaa; }
@@ -180,21 +218,34 @@
         <label>제목</label>
         <input type="text" id="inputTitle" placeholder="스케줄 제목">
       </div>
-      <div class="form-row">
-        <div class="form-group">
-          <label>시작 시간</label>
-          <div class="time-picker" id="tpInputStart"></div>
+      <div class="time-row" id="timeRowInput">
+        <div class="time-row-header">
+          <div class="clock-label">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            하루 종일
+          </div>
+          <label class="toggle-switch">
+            <input type="checkbox" id="allDayInput" onchange="toggleAllDay('input')">
+            <div class="toggle-track"></div>
+            <div class="toggle-knob"></div>
+          </label>
         </div>
-        <div class="form-group">
-          <label>종료 시간</label>
-          <div class="time-picker" id="tpInputEnd"></div>
+        <div class="time-date-row">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          <span class="time-date-display" id="inputDateDisplay"></span>
+        </div>
+        <div class="time-inline" id="timeInlineInput">
+          <div class="time-trigger" id="tpInputStart"></div>
+          <span class="time-sep">종료</span>
+          <div class="time-trigger" id="tpInputEnd"></div>
         </div>
       </div>
       <div class="form-group">
         <label>우선순위</label>
         <select id="inputPriority">
+          <option value="" disabled selected>선택하세요</option>
           <option value="low">낮음</option>
-          <option value="medium" selected>보통</option>
+          <option value="medium">보통</option>
           <option value="high">높음</option>
         </select>
       </div>
@@ -224,19 +275,28 @@
       <label>제목</label>
       <input type="text" id="editTitle">
     </div>
-    <div class="form-row">
-      <div class="form-group">
-        <label>시작 시간</label>
-        <div class="time-picker" id="tpEditStart"></div>
+    <div class="time-row" id="timeRowEdit">
+      <div class="time-row-header">
+        <div class="clock-label">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          하루 종일
+        </div>
+        <label class="toggle-switch">
+          <input type="checkbox" id="allDayEdit" onchange="toggleAllDay('edit')">
+          <div class="toggle-track"></div>
+          <div class="toggle-knob"></div>
+        </label>
       </div>
-      <div class="form-group">
-        <label>종료 시간</label>
-        <div class="time-picker" id="tpEditEnd"></div>
+      <div class="time-date-row">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        <span class="time-date-display" id="editDateDisplay"></span>
+        <input type="date" id="editDate" style="margin-left:auto; padding:4px 8px; border:1px solid #ddd; border-radius:6px; font-size:13px;">
       </div>
-    </div>
-    <div class="form-group">
-      <label>날짜</label>
-      <input type="date" id="editDate">
+      <div class="time-inline" id="timeInlineEdit">
+        <div class="time-trigger" id="tpEditStart"></div>
+        <span class="time-sep">종료</span>
+        <div class="time-trigger" id="tpEditEnd"></div>
+      </div>
     </div>
     <div class="form-group">
       <label>우선순위</label>
@@ -261,129 +321,154 @@
   let currentYear, currentMonth, selectedDate;
   let schedules = JSON.parse(localStorage.getItem('schedules') || '[]');
 
-  /* ── Custom Time Picker ── */
-  const timePickers = {};
+  /* ── AM/PM Time Picker (Korean Calendar Style) ── */
 
-  function createTimePicker(containerId, placeholder) {
+  function formatKoreanTime(hour, minute) {
+    if (hour === null || minute === null) return '시간 선택';
+    const h = parseInt(hour);
+    const ampm = h < 12 ? '오전' : '오후';
+    const h12 = h === 0 ? 12 : h > 12 ? h - 12 : h;
+    return `${ampm} ${h12}:${minute}`;
+  }
+
+  function createTimePicker(containerId, placeholder, onChange) {
     const container = document.getElementById(containerId);
-    const state = { hour: null, minute: null, open: false };
-    timePickers[containerId] = state;
+    const state = { hour: null, minute: null, open: false, pickedHour: false, pickedMinute: false };
 
-    const display = document.createElement('div');
-    display.className = 'time-picker-input';
-    display.innerHTML = `<span class="placeholder">${placeholder}</span><span>&#9660;</span>`;
+    const btn = document.createElement('div');
+    btn.className = 'time-trigger-btn';
+    btn.innerHTML = `<span class="tp-label">${placeholder}</span><span class="arrow">&#9660;</span>`;
 
     const dropdown = document.createElement('div');
-    dropdown.className = 'time-picker-dropdown';
+    dropdown.className = 'tp-dropdown';
 
-    // Build hours column
-    const hoursHtml = Array.from({length: 24}, (_, i) => {
-      const h = String(i).padStart(2, '0');
-      return `<div class="time-option" data-hour="${h}">${h}</div>`;
+    // AM/PM column + hour (1-12) + minutes (5-min)
+    const ampmHtml = ['오전', '오후'].map(v => `<div class="tp-opt" data-ampm="${v}">${v}</div>`).join('');
+    const hoursHtml = Array.from({length: 12}, (_, i) => {
+      const h = i === 0 ? 12 : i;
+      return `<div class="tp-opt" data-h12="${h}">${h}</div>`;
     }).join('');
-
-    // Build minutes column (5-min intervals)
-    const minsHtml = Array.from({length: 12}, (_, i) => {
-      const m = String(i * 5).padStart(2, '0');
-      return `<div class="time-option" data-minute="${m}">${m}</div>`;
+    const minsHtml = Array.from({length: 60}, (_, i) => {
+      const m = String(i).padStart(2, '0');
+      return `<div class="tp-opt" data-minute="${m}">${m}</div>`;
     }).join('');
 
     dropdown.innerHTML = `
-      <div class="time-picker-cols">
-        <div class="time-picker-col">
-          <div class="time-picker-col-label">시</div>
-          <div class="time-picker-scroll tp-hours">${hoursHtml}</div>
-        </div>
-        <div class="time-picker-col">
-          <div class="time-picker-col-label">분</div>
-          <div class="time-picker-scroll tp-minutes">${minsHtml}</div>
-        </div>
+      <div class="tp-cols">
+        <div class="tp-col"><div class="tp-col-label">오전/오후</div><div class="tp-scroll tp-ampm">${ampmHtml}</div></div>
+        <div class="tp-col"><div class="tp-col-label">시</div><div class="tp-scroll tp-hours">${hoursHtml}</div></div>
+        <div class="tp-col"><div class="tp-col-label">분</div><div class="tp-scroll tp-mins">${minsHtml}</div></div>
       </div>
-      <div class="time-picker-actions">
+      <div class="tp-actions">
         <button class="tp-clear" type="button">초기화</button>
-        <button class="tp-confirm" type="button">확인</button>
+        <button class="tp-ok" type="button">확인</button>
       </div>
     `;
 
-    container.appendChild(display);
+    container.appendChild(btn);
     container.appendChild(dropdown);
 
-    function updateDisplay() {
-      if (state.hour !== null && state.minute !== null) {
-        display.innerHTML = `<span>${state.hour}:${state.minute}</span><span>&#9660;</span>`;
-      } else if (state.hour !== null) {
-        display.innerHTML = `<span>${state.hour}:--</span><span>&#9660;</span>`;
-      } else {
-        display.innerHTML = `<span class="placeholder">${placeholder}</span><span>&#9660;</span>`;
-      }
+    // Internal state helpers
+    function getAmpm() {
+      if (state.hour === null) return '오전';
+      return parseInt(state.hour) < 12 ? '오전' : '오후';
+    }
+    function getH12() {
+      if (state.hour === null) return null;
+      const h = parseInt(state.hour);
+      if (h === 0) return 12;
+      return h > 12 ? h - 12 : h;
     }
 
-    function highlightSelected() {
-      dropdown.querySelectorAll('.tp-hours .time-option').forEach(el => {
-        el.classList.toggle('selected', el.dataset.hour === state.hour);
+    function updateDisplay() {
+      const label = btn.querySelector('.tp-label');
+      label.textContent = formatKoreanTime(state.hour, state.minute);
+    }
+
+    function highlight() {
+      const ampm = getAmpm();
+      const h12 = getH12();
+      dropdown.querySelectorAll('.tp-ampm .tp-opt').forEach(el => {
+        el.classList.toggle('selected', el.dataset.ampm === ampm);
       });
-      dropdown.querySelectorAll('.tp-minutes .time-option').forEach(el => {
+      dropdown.querySelectorAll('.tp-hours .tp-opt').forEach(el => {
+        el.classList.toggle('selected', h12 !== null && parseInt(el.dataset.h12) === h12);
+      });
+      dropdown.querySelectorAll('.tp-mins .tp-opt').forEach(el => {
         el.classList.toggle('selected', el.dataset.minute === state.minute);
       });
     }
 
-    function scrollToSelected() {
-      if (state.hour !== null) {
-        const hourEl = dropdown.querySelector(`.tp-hours [data-hour="${state.hour}"]`);
-        if (hourEl) hourEl.scrollIntoView({ block: 'center', behavior: 'instant' });
-      }
-      if (state.minute !== null) {
-        const minEl = dropdown.querySelector(`.tp-minutes [data-minute="${state.minute}"]`);
-        if (minEl) minEl.scrollIntoView({ block: 'center', behavior: 'instant' });
-      }
+    function scrollToSel() {
+      dropdown.querySelectorAll('.tp-opt.selected').forEach(el => {
+        el.scrollIntoView({ block: 'center', behavior: 'instant' });
+      });
     }
 
-    function openDropdown() {
-      document.querySelectorAll('.time-picker-dropdown.open').forEach(d => d.classList.remove('open'));
-      document.querySelectorAll('.time-picker-input.active').forEach(d => d.classList.remove('active'));
+    function openDrop() {
+      document.querySelectorAll('.tp-dropdown.open').forEach(d => d.classList.remove('open'));
+      document.querySelectorAll('.time-trigger-btn.active').forEach(d => d.classList.remove('active'));
       dropdown.classList.add('open');
-      display.classList.add('active');
+      btn.classList.add('active');
       state.open = true;
-      highlightSelected();
-      setTimeout(scrollToSelected, 0);
+      state.pickedHour = false;
+      state.pickedMinute = false;
+      highlight();
+      setTimeout(scrollToSel, 0);
     }
 
-    function closeDropdown() {
+    function closeDrop() {
       dropdown.classList.remove('open');
-      display.classList.remove('active');
+      btn.classList.remove('active');
       state.open = false;
     }
 
-    display.addEventListener('click', (e) => {
+    // Stop propagation on the whole container so document click doesn't close it
+    container.addEventListener('click', (e) => {
       e.stopPropagation();
-      if (state.open) closeDropdown();
-      else openDropdown();
+    });
+
+    btn.addEventListener('click', () => {
+      if (state.open) closeDrop(); else openDrop();
     });
 
     dropdown.addEventListener('click', (e) => {
-      e.stopPropagation();
-      const opt = e.target.closest('.time-option');
+      const opt = e.target.closest('.tp-opt');
       if (opt) {
-        if (opt.dataset.hour !== undefined) {
-          state.hour = opt.dataset.hour;
+        if (opt.dataset.ampm !== undefined) {
+          const curH12 = getH12() || 10;
+          const isAM = opt.dataset.ampm === '오전';
+          let h24 = isAM ? (curH12 === 12 ? 0 : curH12) : (curH12 === 12 ? 12 : curH12 + 12);
+          state.hour = String(h24).padStart(2, '0');
           if (state.minute === null) state.minute = '00';
+          state.pickedHour = true;
+        }
+        if (opt.dataset.h12 !== undefined) {
+          const h12 = parseInt(opt.dataset.h12);
+          const isAM = getAmpm() === '오전';
+          let h24 = isAM ? (h12 === 12 ? 0 : h12) : (h12 === 12 ? 12 : h12 + 12);
+          state.hour = String(h24).padStart(2, '0');
+          if (state.minute === null) state.minute = '00';
+          state.pickedHour = true;
         }
         if (opt.dataset.minute !== undefined) {
           state.minute = opt.dataset.minute;
           if (state.hour === null) state.hour = '09';
+          state.pickedMinute = true;
         }
-        highlightSelected();
+        highlight();
         updateDisplay();
+        if (state.pickedHour && state.pickedMinute) {
+          if (onChange) onChange(state.hour + ':' + state.minute);
+          setTimeout(closeDrop, 150);
+        }
       }
       if (e.target.classList.contains('tp-clear')) {
-        state.hour = null;
-        state.minute = null;
-        highlightSelected();
-        updateDisplay();
-        closeDropdown();
+        state.hour = null; state.minute = null;
+        highlight(); updateDisplay(); closeDrop();
       }
-      if (e.target.classList.contains('tp-confirm')) {
-        closeDropdown();
+      if (e.target.classList.contains('tp-ok')) {
+        closeDrop();
       }
     });
 
@@ -396,30 +481,67 @@
         if (val && val.includes(':')) {
           const [h, m] = val.split(':');
           state.hour = h.padStart(2, '0');
-          // Snap to nearest 5-min
-          const mNum = Math.round(parseInt(m) / 5) * 5;
-          state.minute = String(mNum % 60).padStart(2, '0');
+          state.minute = m.padStart(2, '0');
         } else {
-          state.hour = null;
-          state.minute = null;
+          state.hour = null; state.minute = null;
         }
         updateDisplay();
       },
-      close: closeDropdown,
+      close: closeDrop,
+      setDisabled(disabled) {
+        btn.classList.toggle('disabled', disabled);
+        if (disabled) closeDrop();
+      },
     };
   }
 
   // Close all dropdowns on outside click
   document.addEventListener('click', () => {
-    document.querySelectorAll('.time-picker-dropdown.open').forEach(d => d.classList.remove('open'));
-    document.querySelectorAll('.time-picker-input.active').forEach(d => d.classList.remove('active'));
+    document.querySelectorAll('.tp-dropdown.open').forEach(d => d.classList.remove('open'));
+    document.querySelectorAll('.time-trigger-btn.active').forEach(d => d.classList.remove('active'));
   });
 
-  // Initialize all 4 time pickers
-  const tpInputStart = createTimePicker('tpInputStart', '시작 시간');
+  // Add 1 hour to a time string "HH:MM" → "HH:MM"
+  function addOneHour(timeStr) {
+    const [h, m] = timeStr.split(':').map(Number);
+    const newH = (h + 1) % 24;
+    return String(newH).padStart(2, '0') + ':' + String(m).padStart(2, '0');
+  }
+
+  // Initialize time pickers (start pickers auto-set end to +1 hour)
   const tpInputEnd = createTimePicker('tpInputEnd', '종료 시간');
-  const tpEditStart = createTimePicker('tpEditStart', '시작 시간');
+  const tpInputStart = createTimePicker('tpInputStart', '시작 시간', function(val) {
+    if (!tpInputEnd.getValue()) tpInputEnd.setValue(addOneHour(val));
+  });
   const tpEditEnd = createTimePicker('tpEditEnd', '종료 시간');
+  const tpEditStart = createTimePicker('tpEditStart', '시작 시간', function(val) {
+    if (!tpEditEnd.getValue()) tpEditEnd.setValue(addOneHour(val));
+  });
+
+  // All-day toggle
+  function toggleAllDay(context) {
+    const isInput = context === 'input';
+    const checked = document.getElementById(isInput ? 'allDayInput' : 'allDayEdit').checked;
+    const startPicker = isInput ? tpInputStart : tpEditStart;
+    const endPicker = isInput ? tpInputEnd : tpEditEnd;
+    startPicker.setDisabled(checked);
+    endPicker.setDisabled(checked);
+    if (checked) {
+      startPicker.setValue('');
+      endPicker.setValue('');
+    }
+  }
+
+  // Update date display helpers
+  function updateInputDateDisplay() {
+    const parts = selectedDate.split('-');
+    document.getElementById('inputDateDisplay').textContent = `${parts[0]}. ${parseInt(parts[1])}. ${parseInt(parts[2])}.`;
+  }
+  function updateEditDateDisplay(dateStr) {
+    if (!dateStr) return;
+    const parts = dateStr.split('-');
+    document.getElementById('editDateDisplay').textContent = `${parts[0]}. ${parseInt(parts[1])}. ${parseInt(parts[2])}.`;
+  }
 
   /* ── Core App ── */
   function save() {
@@ -501,19 +623,25 @@
       cell.innerHTML = `<div class="day-num">${day}</div>`;
 
       const events = getSchedulesForDate(key);
-      const maxShow = 2;
-      events.slice(0, maxShow).forEach(ev => {
+      const priorityLabel = { high: '높음', medium: '보통', low: '낮음' };
+      events.forEach((ev, idx) => {
+        const wrap = document.createElement('div');
+        wrap.className = 'cal-event-wrap';
         const tag = document.createElement('div');
-        tag.className = `cal-event priority-${ev.priority}`;
+        tag.className = `cal-event ev-color-${idx % 8}`;
         tag.textContent = ev.title;
-        cell.appendChild(tag);
+        const timeText = ev.allDay ? '하루 종일' : ((ev.start ? formatKoreanTime(...ev.start.split(':')) : '') + (ev.start && ev.end ? ' ~ ' : '') + (ev.end ? formatKoreanTime(...ev.end.split(':')) : ''));
+        const tooltip = document.createElement('div');
+        tooltip.className = 'cal-tooltip';
+        tooltip.innerHTML = `<div class="tt-title">${esc(ev.title)}</div>`
+          + (timeText ? `<div class="tt-time">${timeText}</div>` : '')
+          + `<div class="tt-priority">우선순위: ${priorityLabel[ev.priority] || '보통'}</div>`
+          + (ev.desc ? `<div class="tt-memo">${esc(ev.desc)}</div>` : '')
+          + (ev.done ? `<div style="color:#7bed9f;margin-top:2px;">&#10003; 완료</div>` : '');
+        wrap.appendChild(tag);
+        wrap.appendChild(tooltip);
+        cell.appendChild(wrap);
       });
-      if (events.length > maxShow) {
-        const more = document.createElement('div');
-        more.className = 'cal-more';
-        more.textContent = `+${events.length - maxShow}개 더`;
-        cell.appendChild(more);
-      }
 
       cell.onclick = () => { selectedDate = key; renderCalendar(); renderDaySchedules(); };
       body.appendChild(cell);
@@ -528,6 +656,7 @@
     const search = document.getElementById('searchInput').value.toLowerCase();
     const parts = selectedDate.split('-');
     label.textContent = `${parts[0]}년 ${parseInt(parts[1])}월 ${parseInt(parts[2])}일`;
+    updateInputDateDisplay();
 
     let events = getSchedulesForDate(selectedDate);
     if (search) events = events.filter(e => e.title.toLowerCase().includes(search) || (e.desc||'').toLowerCase().includes(search));
@@ -538,14 +667,15 @@
     }
 
     const priorityLabel = { high: '높음', medium: '보통', low: '낮음' };
-    list.innerHTML = events.map(ev => `
+    list.innerHTML = events.map((ev, idx) => `
       <li class="schedule-item">
+        <div class="schedule-dot dot-color-${idx % 8}"></div>
         <div class="schedule-check ${ev.done ? 'checked' : ''}" onclick="toggleDone('${ev.id}')">
           ${ev.done ? '&#10003;' : ''}
         </div>
         <div class="schedule-info">
           <div class="schedule-title ${ev.done ? 'done' : ''}">${esc(ev.title)}</div>
-          <div class="schedule-time">${ev.start || ''}${ev.start && ev.end ? ' ~ ' : ''}${ev.end || ''} &middot; ${priorityLabel[ev.priority]}</div>
+          <div class="schedule-time">${ev.allDay ? '하루 종일' : ((ev.start ? formatKoreanTime(...ev.start.split(':')) : '') + (ev.start && ev.end ? ' ~ ' : '') + (ev.end ? formatKoreanTime(...ev.end.split(':')) : ''))} &middot; ${priorityLabel[ev.priority]}</div>
           ${ev.desc ? `<div class="schedule-desc">${esc(ev.desc)}</div>` : ''}
         </div>
         <div class="schedule-actions">
@@ -566,22 +696,26 @@
     const title = document.getElementById('inputTitle').value.trim();
     if (!title) { alert('제목을 입력해 주세요.'); return; }
 
+    const allDay = document.getElementById('allDayInput').checked;
     schedules.push({
       id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
       date: selectedDate,
       title,
-      start: tpInputStart.getValue(),
-      end: tpInputEnd.getValue(),
-      priority: document.getElementById('inputPriority').value,
+      start: allDay ? '' : tpInputStart.getValue(),
+      end: allDay ? '' : tpInputEnd.getValue(),
+      allDay,
+      priority: document.getElementById('inputPriority').value || 'medium',
       desc: document.getElementById('inputDesc').value.trim(),
       done: false,
     });
     save();
 
     document.getElementById('inputTitle').value = '';
+    document.getElementById('allDayInput').checked = false;
+    toggleAllDay('input');
     tpInputStart.setValue('');
     tpInputEnd.setValue('');
-    document.getElementById('inputPriority').value = 'medium';
+    document.getElementById('inputPriority').selectedIndex = 0;
     document.getElementById('inputDesc').value = '';
 
     renderCalendar();
@@ -606,9 +740,14 @@
     if (!s) return;
     document.getElementById('editId').value = id;
     document.getElementById('editTitle').value = s.title;
-    tpEditStart.setValue(s.start || '');
-    tpEditEnd.setValue(s.end || '');
+    document.getElementById('allDayEdit').checked = !!s.allDay;
+    toggleAllDay('edit');
+    if (!s.allDay) {
+      tpEditStart.setValue(s.start || '');
+      tpEditEnd.setValue(s.end || '');
+    }
     document.getElementById('editDate').value = s.date;
+    updateEditDateDisplay(s.date);
     document.getElementById('editPriority').value = s.priority;
     document.getElementById('editDesc').value = s.desc || '';
     document.getElementById('editModal').classList.add('active');
@@ -626,9 +765,11 @@
     if (!s) return;
     const title = document.getElementById('editTitle').value.trim();
     if (!title) { alert('제목을 입력해 주세요.'); return; }
+    const allDayE = document.getElementById('allDayEdit').checked;
     s.title = title;
-    s.start = tpEditStart.getValue();
-    s.end = tpEditEnd.getValue();
+    s.allDay = allDayE;
+    s.start = allDayE ? '' : tpEditStart.getValue();
+    s.end = allDayE ? '' : tpEditEnd.getValue();
     s.date = document.getElementById('editDate').value;
     s.priority = document.getElementById('editPriority').value;
     s.desc = document.getElementById('editDesc').value.trim();
@@ -652,6 +793,10 @@
 
   document.addEventListener('keydown', e => {
     if (e.key === 'Escape') closeModal();
+  });
+
+  document.getElementById('editDate').addEventListener('change', function() {
+    updateEditDateDisplay(this.value);
   });
 
   init();
