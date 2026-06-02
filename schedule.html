@@ -23,7 +23,21 @@
   .cal-nav { display: flex; align-items: center; gap: 16px; margin-bottom: 16px; }
   .cal-nav button { background: #fff; border: 1px solid #ddd; width: 36px; height: 36px; border-radius: 8px; cursor: pointer; font-size: 18px; display: flex; align-items: center; justify-content: center; transition: background .2s; }
   .cal-nav button:hover { background: #667eea; color: #fff; border-color: #667eea; }
-  .cal-nav .month-label { font-size: 20px; font-weight: 700; min-width: 160px; text-align: center; }
+  .cal-nav .month-label { font-size: 20px; font-weight: 700; min-width: 160px; text-align: center; cursor: pointer; position: relative; user-select: none; }
+  .cal-nav .month-label:hover { color: #667eea; }
+
+  /* Month Picker Dropdown */
+  .month-picker { display: none; position: absolute; top: calc(100% + 8px); left: 50%; transform: translateX(-50%); background: #fff; border: 1px solid #ddd; border-radius: 12px; box-shadow: 0 6px 24px rgba(0,0,0,.15); z-index: 200; padding: 16px; width: 280px; }
+  .month-picker.open { display: block; }
+  .mp-year-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+  .mp-year-row button { background: #f0f0f0; border: none; width: 28px; height: 28px; border-radius: 6px; cursor: pointer; font-size: 14px; display: flex; align-items: center; justify-content: center; }
+  .mp-year-row button:hover { background: #667eea; color: #fff; }
+  .mp-year-val { font-size: 16px; font-weight: 700; }
+  .mp-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+  .mp-month { padding: 8px 0; text-align: center; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 500; transition: all .15s; }
+  .mp-month:hover { background: #eef2ff; color: #667eea; }
+  .mp-month.selected { background: #667eea; color: #fff; font-weight: 700; }
+  .mp-month.today { outline: 2px solid #667eea; outline-offset: -2px; }
 
   /* Calendar */
   .calendar { background: #fff; border-radius: 12px; box-shadow: 0 1px 4px rgba(0,0,0,.08); overflow: hidden; }
@@ -53,9 +67,9 @@
   /* Event Tooltip */
   .cal-event-wrap { position: relative; }
   .cal-event-wrap:hover .cal-tooltip { display: block; }
-  .cal-tooltip { display: none; position: absolute; bottom: calc(100% + 6px); left: 50%; transform: translateX(-50%); background: #2d2d3f; color: #fff; padding: 10px 14px; border-radius: 8px; font-size: 12px; line-height: 1.5; white-space: nowrap; z-index: 100; box-shadow: 0 4px 12px rgba(0,0,0,.25); pointer-events: none; }
-  .cal-tooltip::after { content: ''; position: absolute; top: 100%; left: 50%; transform: translateX(-50%); border: 5px solid transparent; border-top-color: #2d2d3f; }
-  .cal-tooltip .tt-title { font-weight: 700; font-size: 13px; margin-bottom: 4px; }
+  .cal-tooltip { display: none; position: absolute; top: 50%; left: calc(100% + 8px); transform: translateY(-50%); background: #2d2d3f; color: #fff; padding: 10px 14px; border-radius: 8px; font-size: 12px; line-height: 1.5; white-space: normal; z-index: 100; box-shadow: 0 4px 12px rgba(0,0,0,.25); pointer-events: none; min-width: 180px; max-width: 280px; width: max-content; word-break: break-word; }
+  .cal-tooltip::after { content: ''; position: absolute; top: 50%; right: 100%; transform: translateY(-50%); border: 5px solid transparent; border-right-color: #2d2d3f; }
+  .cal-tooltip .tt-title { font-weight: 700; font-size: 13px; margin-bottom: 4px; word-break: break-word; }
   .cal-tooltip .tt-time { color: #a8b0ff; }
   .cal-tooltip .tt-priority { color: #ffd36e; }
   .cal-tooltip .tt-memo { color: #ccc; max-width: 200px; white-space: normal; margin-top: 2px; }
@@ -142,7 +156,7 @@
   .schedule-dot.dot-color-7 { background: #e84393; }
   .schedule-info { flex: 1; min-width: 0; }
   .schedule-title { font-size: 14px; font-weight: 600; margin-bottom: 2px; }
-  .schedule-title.done { text-decoration: line-through; color: #aaa; }
+  .schedule-title.done { color: #aaa; }
   .schedule-time { font-size: 12px; color: #888; }
   .schedule-desc { font-size: 12px; color: #888; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .schedule-actions { display: flex; gap: 4px; flex-shrink: 0; }
@@ -150,14 +164,12 @@
   .schedule-check.checked { background: #27ae60; border-color: #27ae60; color: #fff; }
   .empty-msg { text-align: center; color: #aaa; padding: 20px; font-size: 14px; }
 
-  /* Stats */
-  .stats { display: flex; gap: 8px; margin-bottom: 16px; }
-  .stat-item { flex: 1; text-align: center; padding: 12px 8px; background: #f8f9fa; border-radius: 8px; }
-  .stat-num { font-size: 20px; font-weight: 700; }
-  .stat-num.total { color: #667eea; }
-  .stat-num.done { color: #27ae60; }
-  .stat-num.pending { color: #f39c12; }
-  .stat-label { font-size: 11px; color: #888; margin-top: 2px; }
+  /* Pagination */
+  .pagination { display: flex; justify-content: center; gap: 4px; margin-top: 12px; }
+  .page-btn { width: 30px; height: 30px; border: 1px solid #ddd; border-radius: 6px; background: #fff; cursor: pointer; font-size: 13px; font-weight: 600; color: #555; display: flex; align-items: center; justify-content: center; transition: all .2s; }
+  .page-btn:hover { background: #eef2ff; border-color: #667eea; color: #667eea; }
+  .page-btn.active { background: #667eea; color: #fff; border-color: #667eea; }
+
 
   /* Search */
   .search-box { position: relative; margin-bottom: 12px; }
@@ -173,10 +185,41 @@
   .modal .btn-row { display: flex; gap: 8px; margin-top: 16px; }
   .modal .btn-row .btn { flex: 1; }
 
+  /* View Toggle */
+  .view-toggle { display: flex; gap: 4px; }
+  .view-btn { background: rgba(255,255,255,.2); border: 1px solid rgba(255,255,255,.4); color: #fff; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: 600; transition: background .2s; }
+  .view-btn:hover { background: rgba(255,255,255,.35); }
+  .view-btn.active { background: rgba(255,255,255,.45); }
+
+  /* Yearly View */
+  .yearly-view { display: none; }
+  .yearly-view.visible { display: block; }
+  .monthly-view.hidden { display: none; }
+  .year-nav { display: flex; align-items: center; gap: 16px; margin-bottom: 16px; }
+  .year-nav button { background: #fff; border: 1px solid #ddd; width: 36px; height: 36px; border-radius: 8px; cursor: pointer; font-size: 18px; display: flex; align-items: center; justify-content: center; transition: background .2s; }
+  .year-nav button:hover { background: #667eea; color: #fff; border-color: #667eea; }
+  .year-nav .year-label { font-size: 20px; font-weight: 700; min-width: 100px; text-align: center; }
+  .year-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+  .year-month { background: #fff; border-radius: 12px; box-shadow: 0 1px 4px rgba(0,0,0,.08); padding: 16px; cursor: pointer; transition: all .2s; }
+  .year-month:hover { box-shadow: 0 4px 12px rgba(102,126,234,.2); transform: translateY(-2px); }
+  .year-month.current { outline: 2px solid #667eea; }
+  .year-month-name { font-size: 16px; font-weight: 700; margin-bottom: 10px; color: #333; }
+  .year-month-stats { display: flex; flex-direction: column; gap: 4px; }
+  .year-stat-row { display: flex; align-items: center; justify-content: space-between; font-size: 12px; color: #666; }
+  .year-stat-row .count { font-weight: 700; }
+  .year-stat-row .count.has { color: #667eea; }
+  .year-mini-bar { height: 6px; background: #eee; border-radius: 3px; margin-top: 8px; overflow: hidden; }
+  .year-mini-bar .fill { height: 100%; border-radius: 3px; background: linear-gradient(90deg, #667eea, #764ba2); transition: width .3s; }
+  .year-month-events { margin-top: 8px; }
+  .year-event-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; margin-right: 3px; }
+  .year-event-preview { font-size: 11px; color: #888; margin-top: 4px; line-height: 1.5; }
+  .year-event-preview div { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
   @media (max-width: 900px) {
     .container { flex-direction: column; padding: 16px; }
     .right-panel { width: 100%; }
     .cal-cell { min-height: 70px; }
+    .year-grid { grid-template-columns: repeat(2, 1fr); }
   }
 </style>
 </head>
@@ -184,33 +227,43 @@
 
 <div class="header">
   <h1>&#128197; 스케줄 관리 시스템</h1>
-  <button class="today-btn" onclick="goToday()">오늘</button>
+  <div class="view-toggle">
+    <button class="view-btn active" id="btnMonthly" onclick="switchView('monthly')">월</button>
+    <button class="view-btn" id="btnYearly" onclick="switchView('yearly')">년</button>
+    <button class="today-btn" onclick="goToday()" style="margin-left:8px;">오늘</button>
+  </div>
 </div>
 
 <div class="container">
   <div class="left-panel">
-    <div class="cal-nav">
-      <button onclick="changeMonth(-1)">&#9664;</button>
-      <div class="month-label" id="monthLabel"></div>
-      <button onclick="changeMonth(1)">&#9654;</button>
-    </div>
-    <div class="calendar">
-      <div class="cal-header">
-        <div>일</div><div>월</div><div>화</div><div>수</div><div>목</div><div>금</div><div>토</div>
+    <!-- Monthly View -->
+    <div class="monthly-view" id="monthlyView">
+      <div class="cal-nav">
+        <button onclick="changeMonth(-1)">&#9664;</button>
+        <div class="month-label" id="monthLabel" onclick="toggleMonthPicker(event)">
+          <div class="month-picker" id="monthPicker"></div>
+        </div>
+        <button onclick="changeMonth(1)">&#9654;</button>
       </div>
-      <div class="cal-body" id="calBody"></div>
+      <div class="calendar">
+        <div class="cal-header">
+          <div>일</div><div>월</div><div>화</div><div>수</div><div>목</div><div>금</div><div>토</div>
+        </div>
+        <div class="cal-body" id="calBody"></div>
+      </div>
+    </div>
+    <!-- Yearly View -->
+    <div class="yearly-view" id="yearlyView">
+      <div class="year-nav">
+        <button onclick="changeYear(-1)">&#9664;</button>
+        <div class="year-label" id="yearLabel"></div>
+        <button onclick="changeYear(1)">&#9654;</button>
+      </div>
+      <div class="year-grid" id="yearGrid"></div>
     </div>
   </div>
 
   <div class="right-panel">
-    <div class="panel-card">
-      <div class="stats">
-        <div class="stat-item"><div class="stat-num total" id="statTotal">0</div><div class="stat-label">전체</div></div>
-        <div class="stat-item"><div class="stat-num done" id="statDone">0</div><div class="stat-label">완료</div></div>
-        <div class="stat-item"><div class="stat-num pending" id="statPending">0</div><div class="stat-label">미완료</div></div>
-      </div>
-    </div>
-
     <div class="panel-card">
       <h3>&#10133; 새 스케줄</h3>
       <div class="selected-date" id="selectedDateLabel"></div>
@@ -262,6 +315,7 @@
         <input type="text" id="searchInput" placeholder="검색..." oninput="renderDaySchedules()">
       </div>
       <ul class="schedule-list" id="scheduleList"></ul>
+      <div class="pagination" id="pagination"></div>
     </div>
   </div>
 </div>
@@ -301,6 +355,7 @@
     <div class="form-group">
       <label>우선순위</label>
       <select id="editPriority">
+        <option value="" disabled selected>선택하세요</option>
         <option value="low">낮음</option>
         <option value="medium">보통</option>
         <option value="high">높음</option>
@@ -515,7 +570,7 @@
   });
   const tpEditEnd = createTimePicker('tpEditEnd', '종료 시간');
   const tpEditStart = createTimePicker('tpEditStart', '시작 시간', function(val) {
-    if (!tpEditEnd.getValue()) tpEditEnd.setValue(addOneHour(val));
+    tpEditEnd.setValue(addOneHour(val));
   });
 
   // All-day toggle
@@ -556,10 +611,14 @@
     return schedules.filter(s => s.date === key).sort((a,b) => (a.start||'').localeCompare(b.start||''));
   }
 
+  let currentView = 'monthly';
+  let viewYear;
+
   function init() {
     const now = new Date();
     currentYear = now.getFullYear();
     currentMonth = now.getMonth();
+    viewYear = currentYear;
     selectedDate = dateKey(now);
     renderCalendar();
     renderDaySchedules();
@@ -569,9 +628,26 @@
     const now = new Date();
     currentYear = now.getFullYear();
     currentMonth = now.getMonth();
+    viewYear = currentYear;
     selectedDate = dateKey(now);
-    renderCalendar();
-    renderDaySchedules();
+    if (currentView === 'yearly') {
+      renderYearlyView();
+    } else {
+      renderCalendar();
+      renderDaySchedules();
+    }
+  }
+
+  function switchView(view) {
+    currentView = view;
+    document.getElementById('btnMonthly').classList.toggle('active', view === 'monthly');
+    document.getElementById('btnYearly').classList.toggle('active', view === 'yearly');
+    document.getElementById('monthlyView').classList.toggle('hidden', view === 'yearly');
+    document.getElementById('yearlyView').classList.toggle('visible', view === 'yearly');
+    if (view === 'yearly') {
+      viewYear = currentYear;
+      renderYearlyView();
+    }
   }
 
   function changeMonth(delta) {
@@ -581,9 +657,139 @@
     renderCalendar();
   }
 
+  /* ── Month Picker ── */
+  let mpYear = null;
+  let mpOpen = false;
+
+  function toggleMonthPicker(e) {
+    e.stopPropagation();
+    const picker = document.getElementById('monthPicker');
+    if (mpOpen) {
+      picker.classList.remove('open');
+      mpOpen = false;
+    } else {
+      mpYear = currentYear;
+      renderMonthPicker();
+      picker.classList.add('open');
+      mpOpen = true;
+    }
+  }
+
+  function renderMonthPicker() {
+    const picker = document.getElementById('monthPicker');
+    const now = new Date();
+    const todayY = now.getFullYear();
+    const todayM = now.getMonth();
+    const months = ['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
+
+    picker.innerHTML = `
+      <div class="mp-year-row">
+        <button onclick="mpChangeYear(-1, event)">&#9664;</button>
+        <span class="mp-year-val">${mpYear}년</span>
+        <button onclick="mpChangeYear(1, event)">&#9654;</button>
+      </div>
+      <div class="mp-grid">
+        ${months.map((name, i) => {
+          const sel = mpYear === currentYear && i === currentMonth ? 'selected' : '';
+          const today = mpYear === todayY && i === todayM ? 'today' : '';
+          return `<div class="mp-month ${sel} ${today}" onclick="selectMonth(${mpYear}, ${i}, event)">${name}</div>`;
+        }).join('')}
+      </div>
+    `;
+  }
+
+  function mpChangeYear(delta, e) {
+    e.stopPropagation();
+    mpYear += delta;
+    renderMonthPicker();
+  }
+
+  function selectMonth(year, month, e) {
+    e.stopPropagation();
+    currentYear = year;
+    currentMonth = month;
+    document.getElementById('monthPicker').classList.remove('open');
+    mpOpen = false;
+    renderCalendar();
+    renderDaySchedules();
+  }
+
+  // Close month picker on outside click
+  document.addEventListener('click', () => {
+    if (mpOpen) {
+      document.getElementById('monthPicker').classList.remove('open');
+      mpOpen = false;
+    }
+  });
+
+  function changeYear(delta) {
+    viewYear += delta;
+    renderYearlyView();
+  }
+
+  function getSchedulesForMonth(year, month) {
+    const prefix = `${year}-${String(month + 1).padStart(2, '0')}`;
+    return schedules.filter(s => s.date && s.date.startsWith(prefix));
+  }
+
+  function renderYearlyView() {
+    document.getElementById('yearLabel').textContent = `${viewYear}년`;
+    const grid = document.getElementById('yearGrid');
+    const now = new Date();
+    const todayYear = now.getFullYear();
+    const todayMonth = now.getMonth();
+    const monthNames = ['1월', '2월', '3월', '4월', '5월', '6월', '7월', '8월', '9월', '10월', '11월', '12월'];
+    const colors = ['#667eea', '#e74c3c', '#27ae60', '#f39c12', '#9b59b6', '#e67e22', '#1abc9c', '#e84393'];
+
+    let maxCount = 0;
+    const monthData = [];
+    for (let m = 0; m < 12; m++) {
+      const events = getSchedulesForMonth(viewYear, m);
+      const done = events.filter(e => e.done).length;
+      if (events.length > maxCount) maxCount = events.length;
+      monthData.push({ events, done });
+    }
+
+    grid.innerHTML = monthData.map((data, m) => {
+      const total = data.events.length;
+      const done = data.done;
+      const isCurrent = viewYear === todayYear && m === todayMonth;
+      const barWidth = maxCount > 0 ? Math.round((total / maxCount) * 100) : 0;
+
+      // Preview top 3 events
+      const preview = data.events.slice(0, 3).map((ev, i) =>
+        `<div><span class="year-event-dot" style="background:${colors[i % 8]}"></span>${esc(ev.title)}</div>`
+      ).join('');
+
+      return `
+        <div class="year-month ${isCurrent ? 'current' : ''}" onclick="goToMonth(${m})">
+          <div class="year-month-name">${monthNames[m]}</div>
+          <div class="year-month-stats">
+            <div class="year-stat-row"><span>전체</span><span class="count ${total > 0 ? 'has' : ''}">${total}</span></div>
+            <div class="year-stat-row"><span>완료</span><span class="count" style="color:#27ae60">${done}</span></div>
+            <div class="year-stat-row"><span>미완료</span><span class="count" style="color:#f39c12">${total - done}</span></div>
+          </div>
+          <div class="year-mini-bar"><div class="fill" style="width:${barWidth}%"></div></div>
+          ${preview ? `<div class="year-event-preview">${preview}</div>` : ''}
+        </div>`;
+    }).join('');
+  }
+
+  function goToMonth(month) {
+    currentYear = viewYear;
+    currentMonth = month;
+    selectedDate = `${currentYear}-${String(month + 1).padStart(2, '0')}-01`;
+    switchView('monthly');
+    renderCalendar();
+    renderDaySchedules();
+  }
+
   function renderCalendar() {
     const label = document.getElementById('monthLabel');
-    label.textContent = `${currentYear}년 ${currentMonth + 1}월`;
+    const picker = document.getElementById('monthPicker');
+    label.innerHTML = '';
+    label.appendChild(document.createTextNode(`${currentYear}년 ${currentMonth + 1}월 ▾`));
+    label.appendChild(picker);
 
     const body = document.getElementById('calBody');
     body.innerHTML = '';
@@ -630,6 +836,7 @@
         const tag = document.createElement('div');
         tag.className = `cal-event ev-color-${idx % 8}`;
         tag.textContent = ev.title;
+        tag.addEventListener('click', (e) => { e.stopPropagation(); openEdit(ev.id); });
         const timeText = ev.allDay ? '하루 종일' : ((ev.start ? formatKoreanTime(...ev.start.split(':')) : '') + (ev.start && ev.end ? ' ~ ' : '') + (ev.end ? formatKoreanTime(...ev.end.split(':')) : ''));
         const tooltip = document.createElement('div');
         tooltip.className = 'cal-tooltip';
@@ -643,15 +850,19 @@
         cell.appendChild(wrap);
       });
 
-      cell.onclick = () => { selectedDate = key; renderCalendar(); renderDaySchedules(); };
+      cell.onclick = () => { selectedDate = key; currentPage = 1; renderCalendar(); renderDaySchedules(); };
       body.appendChild(cell);
     }
 
-    updateStats();
   }
 
-  function renderDaySchedules() {
+  let currentPage = 1;
+  const PAGE_SIZE = 3;
+
+  function renderDaySchedules(page) {
+    if (page !== undefined) currentPage = page;
     const list = document.getElementById('scheduleList');
+    const pag = document.getElementById('pagination');
     const label = document.getElementById('selectedDateLabel');
     const search = document.getElementById('searchInput').value.toLowerCase();
     const parts = selectedDate.split('-');
@@ -663,11 +874,21 @@
 
     if (!events.length) {
       list.innerHTML = '<div class="empty-msg">스케줄이 없습니다</div>';
+      pag.innerHTML = '';
       return;
     }
 
+    const totalPages = Math.ceil(events.length / PAGE_SIZE);
+    if (currentPage > totalPages) currentPage = totalPages;
+    if (currentPage < 1) currentPage = 1;
+
+    const start = (currentPage - 1) * PAGE_SIZE;
+    const pageEvents = events.slice(start, start + PAGE_SIZE);
+
     const priorityLabel = { high: '높음', medium: '보통', low: '낮음' };
-    list.innerHTML = events.map((ev, idx) => `
+    list.innerHTML = pageEvents.map((ev, i) => {
+      const idx = start + i;
+      return `
       <li class="schedule-item">
         <div class="schedule-dot dot-color-${idx % 8}"></div>
         <div class="schedule-check ${ev.done ? 'checked' : ''}" onclick="toggleDone('${ev.id}')">
@@ -682,8 +903,18 @@
           <button class="btn btn-edit" onclick="openEdit('${ev.id}')">수정</button>
           <button class="btn btn-danger" onclick="deleteSchedule('${ev.id}')">삭제</button>
         </div>
-      </li>
-    `).join('');
+      </li>`;
+    }).join('');
+
+    // Pagination
+    if (totalPages <= 1) {
+      pag.innerHTML = '';
+      return;
+    }
+    pag.innerHTML = Array.from({length: totalPages}, (_, i) => {
+      const p = i + 1;
+      return `<button class="page-btn ${p === currentPage ? 'active' : ''}" onclick="renderDaySchedules(${p})">${p}</button>`;
+    }).join('');
   }
 
   function esc(str) {
@@ -771,20 +1002,23 @@
     s.start = allDayE ? '' : tpEditStart.getValue();
     s.end = allDayE ? '' : tpEditEnd.getValue();
     s.date = document.getElementById('editDate').value;
-    s.priority = document.getElementById('editPriority').value;
+    s.priority = document.getElementById('editPriority').value || 'medium';
     s.desc = document.getElementById('editDesc').value.trim();
     save();
     closeModal();
+
+    // Reset edit form
+    tpEditStart.setValue('');
+    tpEditEnd.setValue('');
+    document.getElementById('editPriority').selectedIndex = 0;
+
+    // Reset input form
+    tpInputStart.setValue('');
+    tpInputEnd.setValue('');
+    document.getElementById('inputPriority').selectedIndex = 0;
+
     renderCalendar();
     renderDaySchedules();
-  }
-
-  function updateStats() {
-    const total = schedules.length;
-    const done = schedules.filter(s => s.done).length;
-    document.getElementById('statTotal').textContent = total;
-    document.getElementById('statDone').textContent = done;
-    document.getElementById('statPending').textContent = total - done;
   }
 
   document.getElementById('editModal').addEventListener('click', e => {
