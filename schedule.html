@@ -830,7 +830,8 @@
 
       const events = getSchedulesForDate(key);
       const priorityLabel = { high: '높음', medium: '보통', low: '낮음' };
-      events.forEach((ev, idx) => {
+      const maxShow = 3;
+      events.slice(0, maxShow).forEach((ev, idx) => {
         const wrap = document.createElement('div');
         wrap.className = 'cal-event-wrap';
         const tag = document.createElement('div');
@@ -849,6 +850,12 @@
         wrap.appendChild(tooltip);
         cell.appendChild(wrap);
       });
+      if (events.length > maxShow) {
+        const more = document.createElement('div');
+        more.style.cssText = 'font-size:11px;color:#667eea;font-weight:600;cursor:pointer;';
+        more.textContent = `+${events.length - maxShow}개 더`;
+        cell.appendChild(more);
+      }
 
       cell.onclick = () => { selectedDate = key; currentPage = 1; renderCalendar(); renderDaySchedules(); };
       body.appendChild(cell);
